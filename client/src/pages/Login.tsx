@@ -61,21 +61,17 @@ const Login = () => {
       .then((res) => {
         if (res.status === 200 || res.status === 201) {
           setServerMessage([{ text: res.data.msg, type: 'success' }]);
-          const timer = setTimeout(() => {
-            setIsLoading(true);
-            const { user } = res.data;
-            localStorage.setItem('token', user.token);
-            localStorage.setItem('userId', user.userId);
-            localStorage.setItem('userName', user.name);
-            const remainingMilliseconds = 60 * 60 * 1000;
-            const expiryDate = new Date(
-              new Date().getTime() + remainingMilliseconds
-            );
-            localStorage.setItem('expiryDate', expiryDate.toISOString());
-
-            dispatchRedux(toAuth({ ...user, isAuth: true }));
-            navigate('/');
-          }, 500);
+          setIsLoading(true);
+          const { user } = res.data;
+          localStorage.setItem('token', user.token);
+          localStorage.setItem('userId', user.userId);
+          const remainingMilliseconds = 60 * 60 * 1000;
+          const expiryDate = new Date(
+            new Date().getTime() + remainingMilliseconds
+          );
+          localStorage.setItem('expiryDate', expiryDate.toISOString());
+          dispatchRedux(toAuth({ ...user, isAuth: true }));
+          navigate('/');
         }
       })
       .catch(({ response }) => {

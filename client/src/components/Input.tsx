@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 interface InputProps {
   id: string;
-  label: string;
+  label?: string;
   type?: string;
   placeholder?: string;
   value: string;

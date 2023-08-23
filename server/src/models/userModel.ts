@@ -1,4 +1,5 @@
 import { Schema, Types, model } from 'mongoose';
+import { PostType } from './postModel';
 
 export interface UserType {
   _id: Types.ObjectId;
@@ -7,7 +8,8 @@ export interface UserType {
   password: string;
   resetToken?: string;
   resetTokenExpiration?: Date;
-  likedPosts?: { postId: Types.ObjectId }[];
+  likedPosts?: Types.ObjectId[];
+  myPosts: Types.ObjectId[];
 }
 
 const userSchema = new Schema<UserType>({
@@ -27,11 +29,14 @@ const userSchema = new Schema<UserType>({
   resetTokenExpiration: Date,
   likedPosts: [
     {
-      postId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Post',
-        required: true,
-      },
+      type: Schema.Types.ObjectId,
+      ref: 'Post',
+    },
+  ],
+  myPosts: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Post',
     },
   ],
 });

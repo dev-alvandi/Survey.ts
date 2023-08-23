@@ -18,11 +18,14 @@ const userSchema = new mongoose_1.Schema({
     resetTokenExpiration: Date,
     likedPosts: [
         {
-            postId: {
-                type: mongoose_1.Schema.Types.ObjectId,
-                ref: 'Post',
-                required: true,
-            },
+            type: mongoose_1.Schema.Types.ObjectId,
+            ref: 'Post',
+        },
+    ],
+    myPosts: [
+        {
+            type: mongoose_1.Schema.Types.ObjectId,
+            ref: 'Post',
         },
     ],
 });

@@ -10,7 +10,7 @@ interface SliderProp {
   removeUploadedImgHandler: (url: string) => void;
 }
 
-const Slider: FC<SliderProp> = ({ image, removeUploadedImgHandler }) => {
+const ImageUploader: FC<SliderProp> = ({ image, removeUploadedImgHandler }) => {
   return (
     <Container className="img-container">
       <div className="slider">
@@ -72,4 +72,4 @@ const Container = styled.div`
   }
 `;
 
-export default Slider;
+export default ImageUploader;

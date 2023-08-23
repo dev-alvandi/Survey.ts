@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-export interface User {
+export interface UserSchemaTypes {
   name?: string;
   email?: string;
   likedPosts?: [];
@@ -11,7 +11,7 @@ export interface User {
 }
 
 interface UserState {
-  user: User;
+  user: UserSchemaTypes;
   resetToken: string;
 }
 
@@ -38,7 +38,7 @@ export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    toAuth: (state, action: PayloadAction<User>) => {
+    toAuth: (state, action: PayloadAction<UserSchemaTypes>) => {
       state.user = action.payload;
     },
     unAuth: (state) => {

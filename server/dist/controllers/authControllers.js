@@ -15,6 +15,7 @@ const resetPasswordTemplate_1 = __importDefault(require("../utils/resetPasswordT
 require('dotenv').config({ path: `${__dirname}/../../.env` });
 const FRONTEND_URL = process.env.FRONTEND_URL;
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN;
 let transporter = nodemailer_1.default.createTransport((0, nodemailer_sendgrid_transport_1.default)({
     auth: {
         api_key: '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',
@@ -91,7 +92,11 @@ const login = (req, res, next) => {
             error.statusCode = 401;
             throw error;
         }
-        const token = jsonwebtoken_1.default.sign({ name: loadedUser.name, email: loadedUser.email }, JWT_SECRET_KEY, { expiresIn: '1h' });
+        const token = jsonwebtoken_1.default.sign({
+            name: loadedUser.name,
+            email: loadedUser.email,
+            userId: loadedUser._id.toString(),
+        }, JWT_SECRET_KEY, { expiresIn: JWT_EXPIRES_IN });
         return res.status(200).json({
             msg: 'You are logged in :)',
             user: {

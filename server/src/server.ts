@@ -3,6 +3,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import path from 'path';
 import multer, { FileFilterCallback } from 'multer';
+const { v4: uuidv4 } = require('uuid');
 import mongoose, { ConnectOptions, Types } from 'mongoose';
 
 // custom imports
@@ -25,7 +26,7 @@ const fileStorage = multer.diskStorage({
     file: Express.Multer.File,
     cb: (error: Error | null, destination: string) => void
   ) => {
-    cb(null, '../images');
+    cb(null, path.join(__dirname, '../images'));
   },
   filename: (req, file, cb) => {
     cb(null, new Date().toISOString() + '-' + file.originalname);
@@ -38,6 +39,7 @@ const fileFilter = (
   cb: FileFilterCallback
 ): void => {
   if (
+    file.mimetype === 'image/webp' ||
     file.mimetype === 'image/png' ||
     file.mimetype === 'image/jpg' ||
     file.mimetype === 'image/jpeg'
@@ -50,7 +52,10 @@ const fileFilter = (
 
 app.use(bodyParser.json());
 app.use(
-  multer({ storage: fileStorage, fileFilter: fileFilter }).single('imageUrl')
+  multer({
+    storage: fileStorage,
+    fileFilter: fileFilter,
+  }).single('image')
 );
 app.use('/images', express.static(path.join(__dirname, '../images')));
 
@@ -78,7 +83,7 @@ app.use((error: ErrorType, req: Request, res: Response, next: NextFunction) => {
   NODE_ENV === 'development' && console.log(error);
   const status = error.statusCode || 500;
   const { message, data } = error;
-  res.status(status).json({ message: message, data: data });
+  res.status(status).json({ msg: message, data: data });
 });
 
 // Database and Server connection

@@ -12,6 +12,7 @@ import emailHtmlTemplate from '../utils/resetPasswordTemplate';
 require('dotenv').config({ path: `${__dirname}/../../.env` });
 const FRONTEND_URL: string = process.env.FRONTEND_URL as string;
 const JWT_SECRET_KEY: string = process.env.JWT_SECRET_KEY as string;
+const JWT_EXPIRES_IN: string = process.env.JWT_EXPIRES_IN as string;
 
 let transporter = nodemailer.createTransport(
   sendgridTransport({
@@ -99,9 +100,13 @@ export const login: RequestHandler = (req, res, next) => {
         throw error;
       }
       const token = jwt.sign(
-        { name: loadedUser.name, email: loadedUser.email },
+        {
+          name: loadedUser.name,
+          email: loadedUser.email,
+          userId: loadedUser._id.toString(),
+        },
         JWT_SECRET_KEY,
-        { expiresIn: '1h' }
+        { expiresIn: JWT_EXPIRES_IN }
       );
       return res.status(200).json({
         msg: 'You are logged in :)',

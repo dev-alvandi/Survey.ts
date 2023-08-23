@@ -62,10 +62,10 @@ const Register = () => {
         if (res.status === 200 || res.status === 201) {
           console.log(res.data);
           setServerMessage([{ text: res.data.msg, type: 'success' }]);
-          setTimeout(() => {
-            setIsLoading(true);
-            navigate('/login');
-          }, 500);
+          // setTimeout(() => {
+          setIsLoading(true);
+          navigate('/login');
+          // }, 500);
         }
       })
       .catch(({ response }) => {

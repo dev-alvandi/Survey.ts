@@ -5,11 +5,8 @@ export interface PostType {
   title: string;
   caption: string;
   imageUrl: string;
-  creator: {
-    userId: Types.ObjectId;
-    name: string;
-  };
-  likes?: number;
+  creator: Types.ObjectId;
+  likes: string[];
   comments?: {
     userId: Types.ObjectId;
     commentedAt: Date;
@@ -31,9 +28,13 @@ const postSchema = new Schema<PostType>(
       type: String,
       required: true,
     },
-    likes: {
-      type: Number,
-    },
+    likes: [
+      {
+        type: String,
+        required: true,
+        default: 0,
+      },
+    ],
     comments: {
       type: [
         {
@@ -42,11 +43,15 @@ const postSchema = new Schema<PostType>(
             ref: 'User',
             required: true,
           },
-          commentedAt: {
+          text: {
+            type: String,
+            required: true,
+          },
+          updated_at: {
             type: Date,
             required: true,
           },
-          editedAt: {
+          created_at: {
             type: Date,
             required: true,
           },
@@ -55,11 +60,9 @@ const postSchema = new Schema<PostType>(
       required: false,
     },
     creator: {
-      userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-      name: {
-        type: String,
-        required: true,
-      },
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
   },
   {

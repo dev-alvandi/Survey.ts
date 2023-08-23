@@ -2,24 +2,35 @@ import { ChangeEvent, Dispatch, FC, SetStateAction } from 'react';
 import styled from 'styled-components';
 
 interface TextareaProps {
-  label: string;
+  label?: string;
+  placeholder?: string;
   id: string;
+  rows?: number;
   value: string;
+  className?: string;
   onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
-const Textarea: FC<TextareaProps> = ({ label, id, onChange, value }) => {
+const Textarea: FC<TextareaProps> = ({
+  label,
+  id,
+  onChange,
+  value,
+  rows,
+  placeholder,
+  className,
+}) => {
   return (
-    <Container>
+    <Container className={className}>
       <label htmlFor={id}>{label}</label>
-      <div className="input-container">
+      <div className={`input-container`}>
         <textarea
           id={id}
           cols={30}
-          rows={10}
+          rows={rows || 10}
           onChange={onChange}
           value={value}
-          placeholder="Write what you want to share ..."
+          placeholder={placeholder || 'Write what you want to share ...'}
         />
       </div>
     </Container>
@@ -38,15 +49,16 @@ const Container = styled.div`
 
     textarea {
       width: 100%;
+      outline: none;
       border-radius: 0.25rem;
       appearance: none;
       background-color: #fff;
-      border-color: #6b7280;
-      border-width: 1px;
+      border: 1px solid #6b7280;
       padding: 0.375rem 0.75rem;
       font-size: 1rem;
       line-height: 1.5rem;
       resize: vertical;
+      font-family: sans-serif;
 
       &:focus {
         outline: 2px solid transparent;

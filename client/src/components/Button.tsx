@@ -7,6 +7,7 @@ interface ButtonProps {
   onClick?: () => void;
   children: string;
   isLoading: boolean;
+  className?: string;
 }
 
 const Button: FC<ButtonProps> = ({
@@ -15,13 +16,14 @@ const Button: FC<ButtonProps> = ({
   disabled,
   isLoading,
   children,
+  className,
 }) => {
   return (
     <ButtonElement
       onClick={onClick}
       type={type}
       disabled={disabled || isLoading}
-      className={`${isLoading && 'disabled'}`}>
+      className={`${isLoading && 'disabled'} ${className}`}>
       {!isLoading ? children : 'Loading...'}
     </ButtonElement>
   );

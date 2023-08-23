@@ -8,6 +8,7 @@ const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const path_1 = __importDefault(require("path"));
 const multer_1 = __importDefault(require("multer"));
+const { v4: uuidv4 } = require('uuid');
 const mongoose_1 = __importDefault(require("mongoose"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const postRoutes_1 = __importDefault(require("./routes/postRoutes"));
@@ -20,14 +21,15 @@ const NODE_ENV = process.env.NODE_ENV;
 const app = (0, express_1.default)();
 const fileStorage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, '../images');
+        cb(null, path_1.default.join(__dirname, '../images'));
     },
     filename: (req, file, cb) => {
         cb(null, new Date().toISOString() + '-' + file.originalname);
     },
 });
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/png' ||
+    if (file.mimetype === 'image/webp' ||
+        file.mimetype === 'image/png' ||
         file.mimetype === 'image/jpg' ||
         file.mimetype === 'image/jpeg') {
         cb(null, true);
@@ -37,7 +39,10 @@ const fileFilter = (req, file, cb) => {
     }
 };
 app.use(body_parser_1.default.json());
-app.use((0, multer_1.default)({ storage: fileStorage, fileFilter: fileFilter }).single('imageUrl'));
+app.use((0, multer_1.default)({
+    storage: fileStorage,
+    fileFilter: fileFilter,
+}).single('image'));
 app.use('/images', express_1.default.static(path_1.default.join(__dirname, '../images')));
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -52,7 +57,7 @@ app.use((error, req, res, next) => {
     NODE_ENV === 'development' && console.log(error);
     const status = error.statusCode || 500;
     const { message, data } = error;
-    res.status(status).json({ message: message, data: data });
+    res.status(status).json({ msg: message, data: data });
 });
 // Database and Server connection
 mongoose_1.default

@@ -1,17 +1,18 @@
-import { ChangeEvent, FormEvent, useState, DragEvent } from 'react';
-
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../store/store';
+import { useDispatch } from 'react-redux';
 
 import Input from '../components/Input';
 import Textarea from '../components/Textarea';
 import Button from '../components/Button';
-import Slider from '../components/Slider';
-import { BASE_API_URL } from '../utils/api';
+import ImageUploader from '../components/ImageUploader';
+import { BASE_API_IMAGE_url, BASE_API_URL } from '../utils/api';
 import axios from 'axios';
 import ServerMessage from '../components/ServerMessage';
-import { useNavigate } from 'react-router-dom';
 import SingleFileUploader from '../components/SingleFileUploader';
-import { convertBase64 } from '../utils/convertBase64';
+import { editPost, resetPostValue } from '../store/postSlice';
 
 interface ValueStateTypes {
   image: any;
@@ -25,77 +26,123 @@ interface serverMessageProps {
 }
 
 export default function CreatePost() {
+  const dispatch = useDispatch();
+
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isEditing = useAppSelector((state) => state.editPost.isEditing);
+  const post = useAppSelector((state) => state.editPost.post);
+
   const [values, setValues] = useState<ValueStateTypes>({
-    image: '',
+    image: {},
     title: '',
     caption: '',
   });
-  const [blobTypeImage, setBlobTypeImage] = useState<Blob>();
-
+  const [imageUrl, setImageUrl] = useState('');
   const [serverMessage, setServerMessage] = useState<serverMessageProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  console.log(isEditing);
+
+  useEffect(() => {
+    if (isEditing) {
+      setValues((prevState) => ({
+        ...prevState,
+        image: post.imageUrl,
+        title: post.title,
+        caption: post.caption,
+      }));
+
+      setImageUrl(`${BASE_API_IMAGE_url}/${post.imageUrl}`);
+    }
+  }, []);
+
+  //* Cleanup after leaving the page!
+  useEffect(() => {
+    if (location.pathname !== '/create-post') {
+      dispatch(editPost({ isEditing: false, post: { ...resetPostValue } }));
+    }
+  }, [location]);
+
   const onChangeUploadHandler = (e: any) => {
     const imageFile = e.target.files[0];
-    setBlobTypeImage(imageFile);
+    setImageUrl(URL.createObjectURL(imageFile));
     setValues((prevState) => ({
       ...prevState,
-      image: URL.createObjectURL(imageFile),
+      image: imageFile,
     }));
   };
 
   const onDropUploadHandler = (e: any) => {
     e.preventDefault();
     const imageFile = e?.dataTransfer?.files[0];
-    setBlobTypeImage(imageFile);
+    setImageUrl(URL.createObjectURL(imageFile));
     setValues((prevState) => ({
       ...prevState,
-      image: URL.createObjectURL(imageFile),
+      image: imageFile,
     }));
   };
 
   const removeUploadedImgHandler = (e: any) => {
     setValues((prevState) => ({ ...prevState, image: undefined }));
+    setImageUrl('');
   };
 
   const formSubmitHanlder = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     //! check exiparion of token on both sides!
-    const creatorId = localStorage.getItem('userId');
+    const creatorId = localStorage.getItem('userId')!;
 
-    // if (blobTypeImage) {
-    //   render.readAsDataURL(blobTypeImage);
-    // }
-    // render.onload = (renderEvent: any) => {
-    // };
+    const formData = new FormData();
+    formData.append('title', values.title);
+    formData.append('caption', values.caption);
+    // formData.append('image', imageBase64);
+    formData.append('image', values.image);
+    formData.append('creatorId', creatorId);
 
-    // const formData = new FormData();
-    // if (blobTypeImage) {
-    //   formData.append('imageUrl', blobTypeImage);
-    // }
-    const imageBase64 = await convertBase64(blobTypeImage);
-    axios
-      .post(`${BASE_API_URL}/feed/create-post`, {
-        title: values.title,
-        caption: values.caption,
-        imageUrl: imageBase64,
-        creatorId: creatorId,
-      })
+    let fetchingconfig = {
+      method: 'POST',
+      url: `${BASE_API_URL}/feed/create-post`,
+      headers: {
+        Authorization: 'Bearer ' + localStorage.getItem('token'),
+      },
+    };
+
+    if (isEditing) {
+      fetchingconfig = {
+        method: 'PUT',
+        url: `${BASE_API_URL}/feed/edit-post/${post._id}`,
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token'),
+        },
+      };
+      if (!values.image) {
+        formData.append('image', imageUrl);
+      }
+    }
+
+    axios({
+      method: fetchingconfig.method,
+      url: fetchingconfig.url,
+      data: formData,
+      headers: fetchingconfig.headers,
+    })
       .then((res) => {
-        console.log(res);
-        if (res.status === 201) {
-          console.log(res.data);
+        if (res.status === 201 || res.status === 200) {
           setServerMessage([{ text: res.data.msg, type: 'success' }]);
-          setTimeout(() => {
-            setIsLoading(true);
-            navigate('/');
-          }, 500);
+          if (isEditing) {
+            dispatch(
+              editPost({ isEditing: false, post: { ...resetPostValue } })
+            );
+          }
+          setIsLoading(true);
+          navigate('/');
         }
       })
-      // .catch(({ response }) => {
       .catch((response) => {
+        // .catch(({ response }) => {
         setIsLoading(false);
         console.log(response);
         // const errArray: serverMessageProps[] = [];
@@ -110,15 +157,18 @@ export default function CreatePost() {
     <Container className="pageContainer">
       <form onSubmit={formSubmitHanlder}>
         <ServerMessage messageArray={serverMessage} />
-        {!values.image ? (
+        {!imageUrl ? (
           <SingleFileUploader
             onChangeUploadHandler={onChangeUploadHandler}
             onDropUploadHandler={onDropUploadHandler}
             removeUploadedImgHandler={removeUploadedImgHandler}
           />
         ) : (
-          <Slider
-            image={{ url: values.image, name: 'This' }}
+          <ImageUploader
+            image={{
+              url: imageUrl,
+              name: 'This',
+            }}
             removeUploadedImgHandler={removeUploadedImgHandler}
           />
         )}
@@ -142,7 +192,7 @@ export default function CreatePost() {
           }
         />
         <Button type="submit" isLoading={isLoading}>
-          Post Now!
+          {isEditing ? 'Edit Post' : 'Post Now!'}
         </Button>
       </form>
     </Container>

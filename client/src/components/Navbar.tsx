@@ -15,9 +15,10 @@ const Navbar: FC<NavbarPropTypes> = ({ isLogged, logoutHandler }) => {
   useEffect(() => {
     if (isLogged) {
       const name = localStorage.getItem('userName');
+      console.log(name);
       setName(name!);
     }
-  }, [setName]);
+  }, []);
 
   return (
     <Container>
