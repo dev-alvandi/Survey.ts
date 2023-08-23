@@ -64,7 +64,6 @@ const PreviewPosts: FC<PreviewPostsPropTypes> = ({
   };
 
   const editHandler = () => {
-    // console.log(post);
     dispatch(editPost({ isEditing: true, post: post }));
     navigate('/create-post');
   };
@@ -79,7 +78,7 @@ const PreviewPosts: FC<PreviewPostsPropTypes> = ({
     axios
       .delete(`${BASE_API_URL}/feed/delete-post/${post._id}`, config)
       .then((res) => {
-        console.log(res);
+        // console.log(res);
         if (res.status === 200) {
           handleDeletedItem(post._id);
         }

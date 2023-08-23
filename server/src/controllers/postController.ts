@@ -7,6 +7,7 @@ import { clearImage } from '../utils/clearImageHandler';
 import { UserAuthInfoRequest } from '../utils/typeDefinitions';
 
 export const getPosts: RequestHandler = (req: any, res, next) => {
+  const { userId } = req.query;
   const currPage: number = +req.query.page! || 1;
   const perPage = 5;
   let totalItems;
@@ -23,7 +24,13 @@ export const getPosts: RequestHandler = (req: any, res, next) => {
     })
     .then((posts) => {
       loadedPosts = posts;
-      return User.findById(req.userId);
+      if (!userId) {
+        return User.findById(req.userId);
+      }
+      return User.findById(req.userId).populate({
+        path: 'myPosts',
+        populate: { path: 'creator' },
+      });
     })
     .then((user) => {
       // console.log(loadedPosts);
@@ -32,6 +39,10 @@ export const getPosts: RequestHandler = (req: any, res, next) => {
           msg: 'User not found.',
           isUser: false,
         });
+      }
+      if (userId) {
+        // @ts-ignore
+        loadedPosts = user.myPosts;
       }
 
       const updatedPosts = loadedPosts.map((post) => {

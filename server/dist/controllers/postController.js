@@ -18,6 +18,7 @@ const postModel_1 = __importDefault(require("../models/postModel"));
 const userModel_1 = __importDefault(require("../models/userModel"));
 const clearImageHandler_1 = require("../utils/clearImageHandler");
 const getPosts = (req, res, next) => {
+    const { userId } = req.query;
     const currPage = +req.query.page || 1;
     const perPage = 5;
     let totalItems;
@@ -33,7 +34,13 @@ const getPosts = (req, res, next) => {
     })
         .then((posts) => {
         loadedPosts = posts;
-        return userModel_1.default.findById(req.userId);
+        if (!userId) {
+            return userModel_1.default.findById(req.userId);
+        }
+        return userModel_1.default.findById(req.userId).populate({
+            path: 'myPosts',
+            populate: { path: 'creator' },
+        });
     })
         .then((user) => {
         // console.log(loadedPosts);
@@ -42,6 +49,10 @@ const getPosts = (req, res, next) => {
                 msg: 'User not found.',
                 isUser: false,
             });
+        }
+        if (userId) {
+            // @ts-ignore
+            loadedPosts = user.myPosts;
         }
         const updatedPosts = loadedPosts.map((post) => {
             let loadedCreator;
