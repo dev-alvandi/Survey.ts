@@ -1,9 +1,18 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logout = exports.newPassword = exports.forgottenPassword = exports.login = exports.register = void 0;
+exports.logout = exports.newPassword = exports.forgottenPassword = exports.login = exports.setAvatar = exports.register = void 0;
 const express_validator_1 = require("express-validator");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const crypto_1 = __importDefault(require("crypto"));
@@ -31,19 +40,20 @@ const register = (req, res, next) => {
         throw error;
     }
     const { name, email, password } = req.body;
+    let newUser;
     // Hashing password and submiting the user!
     const storingName = name.charAt(0).toUpperCase() + name.slice(1);
     bcrypt_1.default
         .hash(password, 12)
-        .then((hashedPassword) => {
+        .then((hashedPassword) => __awaiter(void 0, void 0, void 0, function* () {
         const user = new userModel_1.default({
             name: storingName,
             email: email.toLowerCase(),
             password: hashedPassword,
         });
-        user.save();
+        newUser = yield user.save();
         return email;
-    })
+    }))
         .then((email) => {
         const emailConfirmation = {
             to: email,
@@ -60,11 +70,56 @@ const register = (req, res, next) => {
         });
     })
         .then(() => {
-        return res.json({ msg: 'Account created successfully!', status: 200 });
+        return res.json({
+            msg: 'Account created successfully!',
+            status: 200,
+            newUser: newUser,
+        });
     })
         .catch((err) => console.log(err));
 };
 exports.register = register;
+const setAvatar = (req, res, next) => {
+    if (!req.files) {
+        const error = new Error('File upload invalid');
+        error.statusCode = 422;
+        error.data = [{ msg: 'No avatar image is provided.' }];
+        throw error;
+    }
+    const { userId } = req.params;
+    if (!userId) {
+        const error = new Error('No user id was set.');
+        error.statusCode = 404;
+        error.data = [{ msg: 'No user id was set.' }];
+        throw error;
+    }
+    // @ts-ignore
+    const splittedAvatarUrl = req.files.avatar[0].path.split('/');
+    const avatarUrl = 'images/' + splittedAvatarUrl[splittedAvatarUrl.length - 1];
+    userModel_1.default.findById(userId)
+        .then((user) => {
+        if (!user) {
+            const error = new Error('No user with the sent credentials was found!');
+            error.statusCode = 422;
+            error.data = [{ msg: 'User is not found.' }];
+            throw error;
+        }
+        user.avatar = avatarUrl;
+        return user.save();
+    })
+        .then((result) => {
+        res.status(201).json({
+            msg: 'Avatar was changed successfully.',
+        });
+    })
+        .catch((err) => {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    });
+};
+exports.setAvatar = setAvatar;
 const login = (req, res, next) => {
     const validationErrors = (0, express_validator_1.validationResult)(req);
     if (!validationErrors.isEmpty()) {

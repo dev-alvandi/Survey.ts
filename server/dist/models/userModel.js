@@ -14,6 +14,9 @@ const userSchema = new mongoose_1.Schema({
         type: String,
         required: true,
     },
+    avatar: {
+        type: String,
+    },
     resetToken: String,
     resetTokenExpiration: Date,
     likedPosts: [

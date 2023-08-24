@@ -52,6 +52,7 @@ router.put('/register', [
     })
         .trim(),
 ], authControllers_1.register);
+router.put('/set-avatar/:userId', authControllers_1.setAvatar);
 router.post('/login', [
     (0, express_validator_1.body)('email')
         .trim()

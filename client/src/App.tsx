@@ -13,6 +13,7 @@ import { toAuth, unAuth } from './store/userSlice';
 import ForgottenPassword from './pages/ForgottenPassword';
 import ResetPassword from './pages/ResetPassword';
 import useAuth from './hooks/useAuth';
+import Avatar from './pages/Avatar';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -31,6 +32,10 @@ function App() {
         <Route
           path="/register"
           element={!user.isAuth ? <Register /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/avatar"
+          element={!user.isAuth ? <Avatar /> : <Navigate to="/" />} //! incorrectly protected!
         />
         <Route
           path="/login"

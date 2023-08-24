@@ -64,7 +64,11 @@ const Register = () => {
           setServerMessage([{ text: res.data.msg, type: 'success' }]);
           // setTimeout(() => {
           setIsLoading(true);
-          navigate('/login');
+          navigate('/avatar', {
+            state: {
+              userId: res.data.newUser._id,
+            },
+          });
           // }, 500);
         }
       })

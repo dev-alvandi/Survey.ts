@@ -13,7 +13,7 @@ import isAuth from '../middleware/isAuth';
 
 const router = Router();
 
-router.get('/receive-posts/', isAuth, getPosts);
+router.get('/receive-posts/', getPosts);
 
 router.get('/receive-post/:postId', isAuth, getPost);
 

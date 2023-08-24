@@ -6,6 +6,7 @@ export interface UserType {
   name: string;
   email: string;
   password: string;
+  avatar?: string;
   resetToken?: string;
   resetTokenExpiration?: Date;
   likedPosts?: Types.ObjectId[];
@@ -24,6 +25,9 @@ const userSchema = new Schema<UserType>({
   password: {
     type: String,
     required: true,
+  },
+  avatar: {
+    type: String,
   },
   resetToken: String,
   resetTokenExpiration: Date,

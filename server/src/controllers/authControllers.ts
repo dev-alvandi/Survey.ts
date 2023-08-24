@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { validationResult } from 'express-validator';
+import { Result, validationResult } from 'express-validator';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
@@ -34,17 +34,18 @@ export const register: RequestHandler = (req, res, next) => {
   }
 
   const { name, email, password } = req.body;
+  let newUser: UserType;
   // Hashing password and submiting the user!
   const storingName = name.charAt(0).toUpperCase() + name.slice(1);
   bcrypt
     .hash(password, 12)
-    .then((hashedPassword) => {
+    .then(async (hashedPassword) => {
       const user = new User({
         name: storingName,
         email: email.toLowerCase(),
         password: hashedPassword,
       });
-      user.save();
+      newUser = await user.save();
       return email;
     })
     .then((email) => {
@@ -63,9 +64,61 @@ export const register: RequestHandler = (req, res, next) => {
       });
     })
     .then(() => {
-      return res.json({ msg: 'Account created successfully!', status: 200 });
+      return res.json({
+        msg: 'Account created successfully!',
+        status: 200,
+        newUser: newUser,
+      });
     })
     .catch((err) => console.log(err));
+};
+
+export const setAvatar: RequestHandler = (req, res, next) => {
+  if (!req.files) {
+    const error: any = new Error('File upload invalid');
+    error.statusCode = 422;
+    error.data = [{ msg: 'No avatar image is provided.' }];
+    throw error;
+  }
+
+  const { userId } = req.params;
+
+  if (!userId) {
+    const error: any = new Error('No user id was set.');
+    error.statusCode = 404;
+    error.data = [{ msg: 'No user id was set.' }];
+    throw error;
+  }
+
+  // @ts-ignore
+  const splittedAvatarUrl = req.files.avatar[0].path.split('/');
+  const avatarUrl = 'images/' + splittedAvatarUrl[splittedAvatarUrl.length - 1];
+
+  User.findById(userId)
+    .then((user) => {
+      if (!user) {
+        const error: any = new Error(
+          'No user with the sent credentials was found!'
+        );
+        error.statusCode = 422;
+        error.data = [{ msg: 'User is not found.' }];
+        throw error;
+      }
+
+      user.avatar = avatarUrl;
+      return user.save();
+    })
+    .then((result) => {
+      res.status(201).json({
+        msg: 'Avatar was changed successfully.',
+      });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
 };
 
 export const login: RequestHandler = (req, res, next) => {

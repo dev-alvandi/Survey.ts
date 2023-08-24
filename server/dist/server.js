@@ -42,7 +42,7 @@ app.use(body_parser_1.default.json());
 app.use((0, multer_1.default)({
     storage: fileStorage,
     fileFilter: fileFilter,
-}).single('image'));
+}).fields([{ name: 'image' }, { name: 'avatar' }]));
 app.use('/images', express_1.default.static(path_1.default.join(__dirname, '../images')));
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');

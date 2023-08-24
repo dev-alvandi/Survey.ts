@@ -18,14 +18,18 @@ export const getPosts: RequestHandler = (req: any, res, next) => {
     .then((count) => {
       totalItems = count;
       return Post.find()
-        .populate('creator', 'name')
+        .populate('creator')
         .skip((currPage - 1) * perPage)
         .limit(perPage);
     })
-    .then((posts) => {
+    .then((posts): any => {
       loadedPosts = posts;
       if (!userId) {
-        return User.findById(req.userId);
+        return res.status(200).json({
+          msg: 'Fetched posts successfully.',
+          posts: [...posts],
+          isUser: false,
+        });
       }
       return User.findById(req.userId).populate({
         path: 'myPosts',
@@ -33,39 +37,37 @@ export const getPosts: RequestHandler = (req: any, res, next) => {
       });
     })
     .then((user) => {
-      // console.log(loadedPosts);
-      if (!user) {
-        return res.status(422).json({
-          msg: 'User not found.',
-          isUser: false,
+      if (userId) {
+        if (!user) {
+          return res.status(422).json({
+            msg: 'User not found.',
+            isUser: false,
+          });
+        }
+
+        const updatedPosts = loadedPosts.map((post) => {
+          let loadedCreator: UserType;
+          const isLiked = user.likedPosts!.find(
+            (likedPost: Types.ObjectId) =>
+              likedPost.toString() === post._id.toString()
+          );
+          const newPost = {
+            // @ts-ignore
+            ...post.toObject(),
+            isLiked: isLiked ? true : false,
+            // @ts-ignore
+            creator: post.toObject().creator,
+          };
+
+          return newPost;
+        });
+
+        return res.status(200).json({
+          msg: 'Fetched posts successfully.',
+          posts: [...updatedPosts],
+          isUser: true,
         });
       }
-      if (userId) {
-        // @ts-ignore
-        loadedPosts = user.myPosts;
-      }
-
-      const updatedPosts = loadedPosts.map((post) => {
-        let loadedCreator: UserType;
-        const isLiked = user.likedPosts!.find(
-          (likedPost) => likedPost.toString() === post._id.toString()
-        );
-        const newPost = {
-          // @ts-ignore
-          ...post.toObject(),
-          isLiked: isLiked ? true : false,
-          // @ts-ignore
-          creator: post.toObject().creator,
-        };
-
-        return newPost;
-      });
-
-      return res.status(200).json({
-        msg: 'Fetched posts successfully.',
-        posts: [...updatedPosts],
-        isUser: true,
-      });
     })
     .catch((err) => {
       if (!err.statusCode) {
@@ -103,7 +105,7 @@ export const CreatePost: RequestHandler = (req: any, res, next) => {
     throw error;
   }
 
-  if (!req.file) {
+  if (!req.files) {
     const error: any = new Error('File upload invalid');
     error.statusCode = 422;
     error.data = [{ msg: 'No image is provided.' }];
@@ -111,7 +113,7 @@ export const CreatePost: RequestHandler = (req: any, res, next) => {
   }
 
   const { title, caption } = req.body;
-  const splittedImageUrl = req.file.path.split('/');
+  const splittedImageUrl = req.files.image[0].path.split('/');
   const imageUrl = 'images/' + splittedImageUrl[splittedImageUrl.length - 1];
 
   let creator: UserType;

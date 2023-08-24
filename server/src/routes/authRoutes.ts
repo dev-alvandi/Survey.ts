@@ -4,6 +4,7 @@ import { body } from 'express-validator';
 import User from '../models/userModel';
 import {
   register,
+  setAvatar,
   login,
   forgottenPassword,
   newPassword,
@@ -52,6 +53,9 @@ router.put(
   ],
   register
 );
+
+router.put('/set-avatar/:userId', setAvatar);
+
 router.post(
   '/login',
   [
@@ -69,6 +73,7 @@ router.post(
   login
 );
 router.post('/forgottenpassword', forgottenPassword);
+
 router.post('/new-password', newPassword);
 
 // Get routes

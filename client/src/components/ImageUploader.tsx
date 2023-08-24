@@ -14,7 +14,6 @@ const ImageUploader: FC<SliderProp> = ({ image, removeUploadedImgHandler }) => {
   return (
     <Container className="img-container">
       <div className="slider">
-        {/* {images.map((image: { url: string; name: string }, index: number) => ( */}
         <div className="image" key={image.url}>
           <button
             className="delete-img"
@@ -30,7 +29,6 @@ const ImageUploader: FC<SliderProp> = ({ image, removeUploadedImgHandler }) => {
             }}
           />
         </div>
-        {/* ))} */}
       </div>
     </Container>
   );
@@ -42,9 +40,9 @@ const Container = styled.div`
     display: flex;
     gap: 1rem;
     .image {
-      /* width: 25%; */
-      /* flex: 0 0 25%; */
       width: 100%;
+      max-width: 50%;
+      margin: auto;
       display: inline-block;
       position: relative;
       .delete-img {
@@ -65,6 +63,7 @@ const Container = styled.div`
       }
       .uploaded-image {
         width: 100%;
+
         object-fit: contain;
         border-radius: 0.375rem;
       }

@@ -96,7 +96,7 @@ const PreviewPosts: FC<PreviewPostsPropTypes> = ({
     <Section>
       <div className="post-header">
         <img
-          src={`${BASE_API_IMAGE_url}/${post.imageUrl}`}
+          src={`${BASE_API_IMAGE_url}/${post.creator.avatar}`}
           alt={post.creator.name}
           className="img-avtar"
         />

@@ -28,14 +28,18 @@ const getPosts = (req, res, next) => {
         .then((count) => {
         totalItems = count;
         return postModel_1.default.find()
-            .populate('creator', 'name')
+            .populate('creator')
             .skip((currPage - 1) * perPage)
             .limit(perPage);
     })
         .then((posts) => {
         loadedPosts = posts;
         if (!userId) {
-            return userModel_1.default.findById(req.userId);
+            return res.status(200).json({
+                msg: 'Fetched posts successfully.',
+                posts: [...posts],
+                isUser: false,
+            });
         }
         return userModel_1.default.findById(req.userId).populate({
             path: 'myPosts',
@@ -43,30 +47,27 @@ const getPosts = (req, res, next) => {
         });
     })
         .then((user) => {
-        // console.log(loadedPosts);
-        if (!user) {
-            return res.status(422).json({
-                msg: 'User not found.',
-                isUser: false,
+        if (userId) {
+            if (!user) {
+                return res.status(422).json({
+                    msg: 'User not found.',
+                    isUser: false,
+                });
+            }
+            const updatedPosts = loadedPosts.map((post) => {
+                let loadedCreator;
+                const isLiked = user.likedPosts.find((likedPost) => likedPost.toString() === post._id.toString());
+                const newPost = Object.assign(Object.assign({}, post.toObject()), { isLiked: isLiked ? true : false, 
+                    // @ts-ignore
+                    creator: post.toObject().creator });
+                return newPost;
+            });
+            return res.status(200).json({
+                msg: 'Fetched posts successfully.',
+                posts: [...updatedPosts],
+                isUser: true,
             });
         }
-        if (userId) {
-            // @ts-ignore
-            loadedPosts = user.myPosts;
-        }
-        const updatedPosts = loadedPosts.map((post) => {
-            let loadedCreator;
-            const isLiked = user.likedPosts.find((likedPost) => likedPost.toString() === post._id.toString());
-            const newPost = Object.assign(Object.assign({}, post.toObject()), { isLiked: isLiked ? true : false, 
-                // @ts-ignore
-                creator: post.toObject().creator });
-            return newPost;
-        });
-        return res.status(200).json({
-            msg: 'Fetched posts successfully.',
-            posts: [...updatedPosts],
-            isUser: true,
-        });
     })
         .catch((err) => {
         if (!err.statusCode) {
@@ -103,14 +104,14 @@ const CreatePost = (req, res, next) => {
         error.data = validationErrors.array();
         throw error;
     }
-    if (!req.file) {
+    if (!req.files) {
         const error = new Error('File upload invalid');
         error.statusCode = 422;
         error.data = [{ msg: 'No image is provided.' }];
         throw error;
     }
     const { title, caption } = req.body;
-    const splittedImageUrl = req.file.path.split('/');
+    const splittedImageUrl = req.files.image[0].path.split('/');
     const imageUrl = 'images/' + splittedImageUrl[splittedImageUrl.length - 1];
     let creator;
     const newPost = new postModel_1.default({
