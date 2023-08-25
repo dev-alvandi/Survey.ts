@@ -14,6 +14,7 @@ import ForgottenPassword from './pages/ForgottenPassword';
 import ResetPassword from './pages/ResetPassword';
 import useAuth from './hooks/useAuth';
 import Avatar from './pages/Avatar';
+import CompletePost from './components/CompletePost';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -60,6 +61,7 @@ function App() {
           />
         )}
         <Route path="/" element={<Home />} />
+        <Route path="/post/:postId" element={<CompletePost />} />
       </Routes>
     </Fragment>
   );
