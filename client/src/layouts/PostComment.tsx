@@ -2,10 +2,8 @@ import { FC, Fragment, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import axios from 'axios';
-import { useDispatch } from 'react-redux';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 
-import { editComment } from '../store/commentSlice';
 import { UserSchemaTypes } from '../store/userSlice';
 import { BASE_API_IMAGE_url, BASE_API_URL } from '../utils/api';
 import dateFormatter from '../utils/dateFormatter';
@@ -13,6 +11,9 @@ import numberOfLikesText from '../utils/numberOfLikesText';
 import OverlayModal from '../components/OverlayModal';
 import ServerMessage from '../components/ServerMessage';
 import { useNavigate } from 'react-router-dom';
+import { isEditingHandler } from '../store/commentSlice';
+import { useAppDispatch } from '../store/store';
+import { isEdited } from '../utils/isEdited';
 
 interface PostCommentPropType {
   comment: {
@@ -28,7 +29,7 @@ interface PostCommentPropType {
 
 const PostComment: FC<PostCommentPropType> = ({ comment }) => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const [isYourComment, setIsYourComment] = useState(false);
   const [isDisplaySetting, setIsDisplayShowSetting] = useState(false);
@@ -81,7 +82,14 @@ const PostComment: FC<PostCommentPropType> = ({ comment }) => {
   };
 
   const editHandler = () => {
-    dispatch(editComment({ isEditing: true, comment: comment }));
+    // dispatch(editComment({ isEditing: true, comment: comment }));
+    dispatch(
+      isEditingHandler({
+        status: true,
+        commentId: comment._id,
+        text: comment.text,
+      })
+    );
   };
 
   const deleteHandler = () => {
@@ -144,6 +152,7 @@ const PostComment: FC<PostCommentPropType> = ({ comment }) => {
             <div className="comment-details-info">
               <div className="date">{dateFormatter(comment.created_at)}</div>
               <div className="likes">{numberOfLikesText(numberOfLikes)}</div>
+              {isEdited(comment) && <div className="edited">Edited</div>}
               {isYourComment && (
                 <div className="post-edit-delete" onClick={handleModalDisplay}>
                   <div className="setting-dots" />

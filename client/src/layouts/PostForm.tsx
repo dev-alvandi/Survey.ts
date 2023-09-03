@@ -1,38 +1,30 @@
-import { ChangeEvent, FC, useState } from 'react';
+import { ChangeEvent, FC, Fragment, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import axios from 'axios';
 
 import Textarea from '../components/Textarea';
 import Button from '../components/Button';
-import { BASE_API_URL } from '../utils/api';
+import { useAppDispatch, useAppSelector } from '../store/store';
+import { isEditingHandler } from '../store/commentSlice';
 
 interface PostFormPropType {
   commentHandler: (arg0: string) => void;
 }
 
 const PostForm: FC<PostFormPropType> = ({ commentHandler }) => {
-  const [commentvalue, setCommentvalue] = useState('');
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const dispatch = useAppDispatch();
 
-  // const commentHandler = () => {
-  //   const config = {
-  //     headers: {
-  //       Authorization: 'Bearer ' + localStorage.getItem('token'),
-  //     },
-  //   };
+  const [commentvalue, setCommentvalue] = useState<string>('');
+  const editing = useAppSelector((state) => state.comment.editing);
 
-  //   axios
-  //     .post(
-  //       `${BASE_API_URL}/feed/new-comment/${postId}`,
-  //       { comment: commentvalue },
-  //       config
-  //     )
-  //     .then((res) => {
-  //       console.log(res);
-  //     })
-  //     .catch((err) => {
-  //       console.log(err);
-  //     });
-  // };
+  useEffect(() => {
+    if (editing.status && editing.text) {
+      setCommentvalue(editing.text);
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }
+  }, [editing.status, editing.text]);
 
   return (
     <Container>
@@ -40,19 +32,36 @@ const PostForm: FC<PostFormPropType> = ({ commentHandler }) => {
         id="comment"
         value={commentvalue}
         rows={1}
+        ref={inputRef}
         className="textarea-container"
         placeholder="Add a comment..."
         onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
           return setCommentvalue(e.target.value);
         }}
       />
-      {commentvalue && (
+      {commentvalue && !editing.status && (
         <Button
-          children="Post"
+          children={'Post'}
           isLoading={false}
           className="btn"
           onClick={commentHandler.bind(null, commentvalue)}
         />
+      )}
+      {commentvalue && editing.status && (
+        <Fragment>
+          <Button
+            children={'Edit'}
+            isLoading={false}
+            className="btn"
+            onClick={commentHandler.bind(null, commentvalue)}
+          />
+          <Button
+            children={'Cancel'}
+            isLoading={false}
+            className="btn btn-danger"
+            onClick={() => dispatch(isEditingHandler({ status: false }))}
+          />
+        </Fragment>
       )}
     </Container>
   );
@@ -94,5 +103,8 @@ const Container = styled.div`
     &:hover {
       color: var(--primary-hover-blue);
     }
+  }
+  .btn-danger {
+    color: var(--danger-red);
   }
 `;

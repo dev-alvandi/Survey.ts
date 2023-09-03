@@ -45,6 +45,10 @@ function App() {
           element={isAuth ? <CreatePost /> : <Navigate to="/login" />}
         />
         <Route
+          path="/edit-post"
+          element={isAuth ? <CreatePost /> : <Navigate to="/login" />}
+        />
+        <Route
           path="/myposts"
           element={isAuth ? <MyPosts /> : <Navigate to="/login" />}
         />

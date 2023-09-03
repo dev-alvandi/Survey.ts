@@ -19,7 +19,7 @@ const PostDeleteUpdate: FC<PropTypes> = ({ handleDeletedItem, post }) => {
 
   const editHandler = () => {
     dispatch(editPost({ isEditing: true, post: post }));
-    navigate('/create-post');
+    navigate('/edit-post');
   };
 
   const deleteHandler = () => {

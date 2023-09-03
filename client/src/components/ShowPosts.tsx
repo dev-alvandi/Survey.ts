@@ -53,7 +53,7 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
     if (typeOfPosts === 'AllPosts') {
       fetchingUrl = `${BASE_API_URL}/feed/receive-posts/?page=${page}`;
     } else if (typeOfPosts === 'MyPosts') {
-      fetchingUrl = `${BASE_API_URL}/feed/receive-posts/?page=${page}&userId=${userId}`;
+      fetchingUrl = `${BASE_API_URL}/feed/receive-myPosts/?page=${page}&userId=${userId}`;
     }
     axios
       .get(fetchingUrl, config)

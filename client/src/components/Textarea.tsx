@@ -1,4 +1,4 @@
-import { ChangeEvent, Dispatch, FC, SetStateAction } from 'react';
+import { ChangeEvent, forwardRef } from 'react';
 import styled from 'styled-components';
 
 interface TextareaProps {
@@ -11,31 +11,28 @@ interface TextareaProps {
   onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
-const Textarea: FC<TextareaProps> = ({
-  label,
-  id,
-  onChange,
-  value,
-  rows,
-  placeholder,
-  className,
-}) => {
-  return (
-    <Container className={className}>
-      <label htmlFor={id}>{label}</label>
-      <div className={`input-container`}>
-        <textarea
-          id={id}
-          cols={30}
-          rows={rows || 10}
-          onChange={onChange}
-          value={value}
-          placeholder={placeholder || 'Write what you want to share ...'}
-        />
-      </div>
-    </Container>
-  );
-};
+const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ label, id, onChange, value, rows, placeholder, className }, ref) => {
+    return (
+      <Container className={className}>
+        <label htmlFor={id}>{label}</label>
+        <div className={`input-container`}>
+          <textarea
+            id={id}
+            cols={30}
+            rows={rows || 10}
+            onChange={onChange}
+            value={value}
+            placeholder={placeholder || 'Write what you want to share ...'}
+            ref={ref}
+          />
+        </div>
+      </Container>
+    );
+  }
+);
+
+export default Textarea;
 
 const Container = styled.div`
   margin: 1rem 0;
@@ -73,5 +70,3 @@ const Container = styled.div`
     }
   }
 `;
-
-export default Textarea;

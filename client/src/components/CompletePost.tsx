@@ -2,6 +2,7 @@ import styled from 'styled-components';
 import { PostSchemaTypes } from '../store/postSlice';
 import { Fragment, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../store/store';
 import axios from 'axios';
 import openSocket from 'socket.io-client';
 
@@ -14,37 +15,24 @@ import PostHeader from '../layouts/PostHeader';
 import PostActions from '../layouts/PostActions';
 import PostForm from '../layouts/PostForm';
 import PostComment from '../layouts/PostComment';
+import { editCommentAction, isEditingHandler } from '../store/commentSlice';
 
 const CompletePost = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const params = useParams();
 
   const [post, setPost] = useState<PostSchemaTypes>();
+  const editing = useAppSelector((state) => state.comment.editing);
 
   useEffect(() => {
     const socket = openSocket(`${BASE_BACKEND_URL}`);
-    socket.on(
-      'comments',
-      (data: { action: string; comment: any; post: PostSchemaTypes }) => {
-        if (data.action === 'create') {
-          if (post) {
-            const newComments = [...post.comments];
-            newComments.push(data.comment);
-            setPost(
-              // @ts-ignore
-              (prevPost) => ({
-                ...prevPost,
-                comments: newComments,
-              })
-            );
-          }
-        } else if (data.action === 'delete') {
-          setPost(data.post);
-        } else if (data.action === 'likedComment') {
-          setPost(data.post);
-        }
+    socket.on('comments', (data: { action: string; post: PostSchemaTypes }) => {
+      const dataActions = ['create', 'edit', 'delete', 'likedComment'];
+      if (dataActions.includes(data.action)) {
+        setPost(data.post);
       }
-    );
+    });
 
     return () => {
       socket.off('comments');
@@ -63,7 +51,11 @@ const CompletePost = () => {
       .catch((err) => {
         console.log(err);
       });
-  }, [params]);
+    return () => {
+      // Clean up
+      dispatch(isEditingHandler({ status: false }));
+    };
+  }, [dispatch, params]);
 
   const commentHandler = (comment: string) => {
     const { postId } = params;
@@ -73,6 +65,17 @@ const CompletePost = () => {
       },
     };
 
+    if (editing.status) {
+      // setMyComment(comment);
+      return dispatch(
+        editCommentAction({
+          method: 'PUT',
+          url: `${BASE_API_URL}/feed/edit-comment/${editing.commentId}`,
+          comment: comment,
+        })
+      );
+    }
+
     axios
       .post(
         `${BASE_API_URL}/feed/new-comment/${postId}`,
@@ -80,7 +83,6 @@ const CompletePost = () => {
         config
       )
       .then((res) => {
-        console.log(res);
         if (res.status === 200) {
         }
       })

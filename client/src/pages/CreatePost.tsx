@@ -43,8 +43,6 @@ export default function CreatePost() {
   const [serverMessage, setServerMessage] = useState<serverMessageProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  console.log(isEditing);
-
   useEffect(() => {
     if (isEditing) {
       setValues((prevState) => ({
@@ -141,15 +139,16 @@ export default function CreatePost() {
           navigate('/');
         }
       })
-      .catch((response) => {
+      .catch(({ response }) => {
         // .catch(({ response }) => {
         setIsLoading(false);
-        console.log(response);
-        // const errArray: serverMessageProps[] = [];
-        // response.data.data.forEach((errObj: { msg: string }) => {
-        //   errArray.push({ text: errObj.msg, type: 'error' });
-        // });
-        // setServerMessage(errArray);
+        const errArray: serverMessageProps[] = [];
+        if (response.data.data) {
+          response.data.data.forEach((errMsg: string) => {
+            errArray.push({ text: errMsg, type: 'error' });
+          });
+          setServerMessage(errArray);
+        }
       });
   };
 

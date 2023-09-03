@@ -2,14 +2,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import { resetTokenReducer, userReducer } from './userSlice';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import { editPostHandler } from './postSlice';
-import { editCommentHandler } from './commentSlice';
+import { commentReducer } from './commentSlice';
 
 export const store = configureStore({
   reducer: {
     resetToken: resetTokenReducer,
     user: userReducer,
     editPost: editPostHandler.reducer,
-    editComment: editCommentHandler.reducer,
+    comment: commentReducer,
   },
 });
 

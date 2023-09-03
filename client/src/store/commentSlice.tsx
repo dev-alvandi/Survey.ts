@@ -1,5 +1,5 @@
-import { PayloadAction, createSlice } from '@reduxjs/toolkit';
-import { UserSchemaTypes } from './userSlice';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import axios from 'axios';
 
 export interface CommentSchemaTypes {
   _id: string;
@@ -13,7 +13,7 @@ export interface CommentSchemaTypes {
 
 interface PostStateTypes {
   myComment: CommentSchemaTypes;
-  isEditing: boolean;
+  editing: { status: boolean; commentId?: string; text?: string };
 }
 
 export const resetCommentValue = {
@@ -26,22 +26,58 @@ export const resetCommentValue = {
 
 const initialState: PostStateTypes = {
   myComment: { ...resetCommentValue },
-  isEditing: false,
+  editing: { status: false },
 };
 
-export const editCommentHandler = createSlice({
-  name: 'editComment',
+const authenticationConfig = {
+  headers: {
+    Authorization: 'Bearer ' + localStorage.getItem('token'),
+  },
+};
+
+export const editCommentAction = createAsyncThunk(
+  'comment/editComment',
+  async ({
+    method,
+    url,
+    comment,
+  }: {
+    method: string;
+    url: string;
+    comment: string;
+  }) => {
+    try {
+      const response = await axios({
+        method: method,
+        url: url,
+        data: { comment: comment },
+        headers: authenticationConfig.headers,
+      });
+      if (response.status === 200) {
+        return response.data.newComment;
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
+);
+
+export const commentSlice = createSlice({
+  name: 'comment',
   initialState,
   reducers: {
-    editComment: (
-      state,
-      action: PayloadAction<{ comment: CommentSchemaTypes; isEditing: boolean }>
-    ) => {
-      state.myComment = action.payload.comment;
-      state.isEditing = action.payload.isEditing;
+    isEditingHandler: (state, action) => {
+      state.editing.status = action.payload.status;
+      state.editing.commentId = action.payload.commentId;
+      state.editing.text = action.payload.text;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(editCommentAction.fulfilled, (state, action) => {
+      state.myComment = action.payload;
+    });
   },
 });
 
-export const editPostReducer = editCommentHandler.reducer;
-export const { editComment } = editCommentHandler.actions;
+export const commentReducer = commentSlice.reducer;
+export const { isEditingHandler } = commentSlice.actions;
