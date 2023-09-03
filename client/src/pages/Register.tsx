@@ -75,10 +75,12 @@ const Register = () => {
       .catch(({ response }) => {
         setIsLoading(false);
         const errArray: serverMessageProps[] = [];
-        response.data.data.forEach((errObj: { msg: string }) => {
-          errArray.push({ text: errObj.msg, type: 'error' });
-        });
-        setServerMessage(errArray);
+        if (response.data.data) {
+          response.data.data.forEach((errMsg: string) => {
+            errArray.push({ text: errMsg, type: 'error' });
+          });
+          setServerMessage(errArray);
+        }
       });
   };
 

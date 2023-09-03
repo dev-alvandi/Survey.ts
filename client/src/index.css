@@ -18,6 +18,8 @@
   --loader-color: #7983ff;
   --secondary-text: #818181;
   --yellow-color: #facf5a;
+
+  --creator-avatar-size: 3rem;
 }
 
 body {
@@ -30,7 +32,7 @@ a {
 }
 
 .pageContainer {
-  padding: 3rem 0;
+  padding: 6rem 0;
   width: 85%;
   margin: auto;
   display: flex;

@@ -2,7 +2,6 @@ import {
   ChangeEvent,
   FormEvent,
   useCallback,
-  useEffect,
   useReducer,
   useState,
 } from 'react';
@@ -14,7 +13,7 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import { BASE_API_URL } from '../utils/api';
 import { useAppDispatch } from '../store/store';
-import { toAuth } from '../store/userSlice';
+import { login } from '../store/userSlice';
 import ServerMessage from '../components/ServerMessage';
 
 enum ACTION {
@@ -62,25 +61,27 @@ const Login = () => {
         if (res.status === 200 || res.status === 201) {
           setServerMessage([{ text: res.data.msg, type: 'success' }]);
           setIsLoading(true);
-          const { user } = res.data;
-          localStorage.setItem('token', user.token);
-          localStorage.setItem('userId', user.userId);
+          const { user, token } = res.data;
+          localStorage.setItem('token', token);
+          localStorage.setItem('userId', user._id);
           const remainingMilliseconds = 60 * 60 * 1000;
           const expiryDate = new Date(
             new Date().getTime() + remainingMilliseconds
           );
           localStorage.setItem('expiryDate', expiryDate.toISOString());
-          dispatchRedux(toAuth({ ...user, isAuth: true }));
+          dispatchRedux(login({ user: user, isAuth: true }));
           navigate('/');
         }
       })
       .catch(({ response }) => {
         setIsLoading(false);
         const errArray: serverMessageProps[] = [];
-        response.data.data.forEach((errObj: { msg: string }) => {
-          errArray.push({ text: errObj.msg, type: 'error' });
-        });
-        setServerMessage(errArray);
+        if (response.data.data) {
+          response.data.data.forEach((errMsg: string) => {
+            errArray.push({ text: errMsg, type: 'error' });
+          });
+          setServerMessage(errArray);
+        }
       });
   };
 

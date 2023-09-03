@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
-import { toAuth, unAuth } from '../store/userSlice';
+import { logout, fetchUserById } from '../store/userSlice';
 import { useAppDispatch, useAppSelector } from '../store/store';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,7 +8,10 @@ const useAuth = () => {
   const navigate = useNavigate();
 
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.auth.user);
+  const user = useAppSelector((state) => state.user.user);
+  const isAuth = useAppSelector((state) => state.user.isAuth);
+
+  // console.log(isAuth);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -24,13 +27,14 @@ const useAuth = () => {
     const userId = localStorage.getItem('userId') || '';
     const remainingMilliseconds =
       new Date(expiryDate).getTime() - new Date().getTime();
-    dispatch(
-      toAuth({
-        isAuth: true,
-        authToken: token,
-        userId: userId,
-      })
-    );
+    // dispatch(
+    //   toAuth({
+    //     isAuth: true,
+    //     authToken: token,
+    //     userId: userId,
+    //   })
+    // );
+    dispatch(fetchUserById(userId));
     setAutoLogout(remainingMilliseconds);
   }, []);
 
@@ -41,16 +45,14 @@ const useAuth = () => {
   };
 
   const logoutHandler = () => {
-    dispatch(unAuth());
-    localStorage.removeItem('token');
-    localStorage.removeItem('expiryDate');
-    localStorage.removeItem('userId');
+    dispatch(logout());
     navigate('/login');
   };
 
   return {
     user,
     logoutHandler,
+    isAuth,
   };
 };
 

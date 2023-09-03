@@ -1,28 +1,60 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-
+import axios from 'axios';
+import { BASE_API_URL } from '../utils/api';
 export interface UserSchemaTypes {
-  name?: string;
-  email?: string;
-  likedPosts?: [];
-  userId: string;
-  isAuth: boolean;
-  authToken: string;
+  _id: string;
+  name: string;
+  email: string;
+  likedPosts: string[];
+  myPosts: string[];
+  likedComments: string[];
+  avatar: string;
 }
+
+const resetUser = {
+  _id: '',
+  name: '',
+  email: '',
+  likedPosts: [],
+  myPosts: [],
+  likedComments: [],
+  avatar: '',
+};
 
 interface UserState {
   user: UserSchemaTypes;
+  isAuth: boolean;
   resetToken: string;
 }
 
 const initialState: UserState = {
-  user: {
-    isAuth: false,
-    authToken: '',
-    userId: '',
-  },
+  user: resetUser,
+  isAuth: false,
   resetToken: '',
 };
+
+export const fetchUserById = createAsyncThunk(
+  'user/FetchById',
+  async (userId: string) => {
+    try {
+      const config = {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token'),
+        },
+      };
+      const response = await axios.get(
+        `${BASE_API_URL}/auth/get-user/${userId}`,
+        config
+      );
+      if (response.status === 200) {
+        return response.data.user;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+);
 
 export const ResetTokenSlice = createSlice({
   name: 'resetToken',
@@ -34,21 +66,35 @@ export const ResetTokenSlice = createSlice({
   },
 });
 
-export const authSlice = createSlice({
-  name: 'auth',
+export const userSlice = createSlice({
+  name: 'user',
   initialState,
   reducers: {
-    toAuth: (state, action: PayloadAction<UserSchemaTypes>) => {
+    logout: (state) => {
+      state.user = resetUser;
+      state.isAuth = false;
+      localStorage.removeItem('token');
+      localStorage.removeItem('expiryDate');
+      localStorage.removeItem('userId');
+    },
+    login: (
+      state,
+      action: PayloadAction<{ user: UserSchemaTypes; isAuth: boolean }>
+    ) => {
+      state.isAuth = action.payload.isAuth;
+      state.user = action.payload.user;
+    },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(fetchUserById.fulfilled, (state, action) => {
       state.user = action.payload;
-    },
-    unAuth: (state) => {
-      state.user = initialState.user;
-    },
+      state.isAuth = true;
+    });
   },
 });
 
 export const resetTokenReducer = ResetTokenSlice.reducer;
 export const { addResetToken } = ResetTokenSlice.actions;
 
-export const authReducer = authSlice.reducer;
-export const { toAuth, unAuth } = authSlice.actions;
+export const userReducer = userSlice.reducer;
+export const { logout, login } = userSlice.actions;

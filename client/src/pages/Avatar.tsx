@@ -11,6 +11,8 @@ const Avatar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  console.log(location);
+
   const [avatarUrl, setAvatarUrl] = useState('');
   const [avatar, setAvatar] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,9 +44,18 @@ const Avatar = () => {
     //! Submitting the avatar!
     const formData = new FormData();
     formData.append('avatar', avatar);
+    if (location.pathname === '/"/edit-avatar"') {
+      formData.append('isEditing', 'true');
+    }
+
+    const config = {
+      headers: {
+        Authorization: 'Bearer ' + localStorage.getItem('token'),
+      },
+    };
 
     axios
-      .put(`${BASE_API_URL}/auth/set-avatar/${userId}`, formData)
+      .put(`${BASE_API_URL}/auth/set-avatar/${userId}`, formData, config)
       .then((res) => {
         setIsLoading(false);
         if (res.status === 201) {

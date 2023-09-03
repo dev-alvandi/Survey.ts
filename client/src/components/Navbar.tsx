@@ -1,32 +1,29 @@
-import { FC, Fragment, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { FC, Fragment } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import logo from '../assets/logo.png';
+import { UserSchemaTypes } from '../store/userSlice';
+import { BASE_API_IMAGE_url } from '../utils/api';
 
 interface NavbarPropTypes {
-  isLogged: boolean;
   logoutHandler: () => void;
+  user: UserSchemaTypes | any;
+  isAuth: boolean;
 }
 
-const Navbar: FC<NavbarPropTypes> = ({ isLogged, logoutHandler }) => {
-  const [name, setName] = useState('');
-
-  useEffect(() => {
-    if (isLogged) {
-      const name = localStorage.getItem('userName');
-      console.log(name);
-      setName(name!);
-    }
-  }, []);
-
+const Navbar: FC<NavbarPropTypes> = ({ user, logoutHandler, isAuth }) => {
+  const navigate = useNavigate();
   return (
     <Container>
       <div className="linkContainer leftSide">
+        <div className="logo-container" onClick={() => navigate('/')}>
+          <img src={logo} alt="Logo" />
+        </div>
         <span className="link">
           <Link to="/">Home</Link>
         </span>
-        {isLogged && (
+        {isAuth && (
           <Fragment>
             <span className="link">
               <Link to="/create-post">Create a Post</Link>
@@ -34,14 +31,15 @@ const Navbar: FC<NavbarPropTypes> = ({ isLogged, logoutHandler }) => {
             <span className="link">
               <Link to="/myposts">My Posts</Link>
             </span>
+            <span className="link">
+              <Link to="/edit-avatar">Edit avatar</Link>
+            </span>
           </Fragment>
         )}
       </div>
-      <div className="logo-container">
-        <img src={logo} alt="Logo" />
-      </div>
+
       <div className="linkContainer RightSide">
-        {!isLogged ? (
+        {!isAuth ? (
           <Fragment>
             <span className="link">
               <Link to="register">Register</Link>
@@ -55,7 +53,14 @@ const Navbar: FC<NavbarPropTypes> = ({ isLogged, logoutHandler }) => {
             <span className="link" onClick={logoutHandler}>
               Logout
             </span>
-            {name.length > 0 && <span className="user-name">{name}</span>}
+            {isAuth && user && (
+              <span className="link">
+                <img
+                  src={`${BASE_API_IMAGE_url}/${user.avatar}`}
+                  alt={user.name}
+                />
+              </span>
+            )}
           </Fragment>
         )}
       </div>
@@ -66,19 +71,25 @@ const Navbar: FC<NavbarPropTypes> = ({ isLogged, logoutHandler }) => {
 export default Navbar;
 
 const Container = styled.nav`
-  height: 4rem;
+  --nav-height: 4rem;
+  height: var(--nav-height);
+  width: 100%;
+  position: fixed;
+  z-index: 900;
   padding: 0 6rem;
   background-color: var(--primary-purple);
-  display: grid;
-  grid-template-columns: 1fr 4rem 1fr;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   .logo-container {
-    width: 100%;
+    height: var(--nav-height);
+    width: var(--nav-height);
     display: flex;
+    padding: 0.2rem;
     justify-content: center;
     align-items: center;
+    cursor: pointer;
     img {
-      width: 100%;
       height: 100%;
     }
   }
@@ -94,6 +105,12 @@ const Container = styled.nav`
       transition: color 0.15s ease-in-out;
       &:hover {
         color: #fff;
+      }
+      img {
+        padding: 0.5rem 0;
+        height: var(--nav-height);
+        border-radius: 50%;
+        cursor: default;
       }
     }
     .user-name {

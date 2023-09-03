@@ -21,6 +21,12 @@ const ServerMessage: FC<PropTypes> = ({ messageArray }) => {
 };
 
 const Container = styled.div`
+  min-width: 30%;
+  position: fixed;
+  z-index: 100;
+  bottom: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
   .message-container {
     display: flex;
     justify-content: center;
