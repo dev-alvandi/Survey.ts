@@ -17,12 +17,11 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [endOfPosts, setEndOfPosts] = useState(false);
-  // const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!endOfPosts) {
       const scrollListener = (e: Event) => {
-        const paddingBottom = 48;
+        // const paddingBottom = 48;
         const target = e.target;
         if (!(target instanceof Document)) {
           return;
@@ -30,7 +29,11 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
         const scrollHeight = target.documentElement.scrollHeight;
         const currentHeight =
           target.documentElement.scrollTop + window.innerHeight;
-        if (Math.floor(scrollHeight - currentHeight) === 0) {
+
+        if (
+          Math.floor(scrollHeight - currentHeight) === 0 &&
+          posts.length > 0
+        ) {
           setIsLoading(true);
           setPage(page + 1);
         }
@@ -39,11 +42,14 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
 
       return () => window.removeEventListener('scroll', scrollListener);
     }
-  }, [endOfPosts, page]);
+  }, [endOfPosts, page, posts, posts.length]);
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
+    const controller = new AbortController();
+    const signal = controller.signal;
     const config = {
+      signal: signal,
       headers: {
         Authorization: 'Bearer ' + localStorage.getItem('token'),
       },
@@ -55,6 +61,9 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
     } else if (typeOfPosts === 'MyPosts') {
       fetchingUrl = `${BASE_API_URL}/feed/receive-myPosts/?page=${page}&userId=${userId}`;
     }
+
+    // console.log(page);
+
     axios
       .get(fetchingUrl, config)
       .then((res) => {
@@ -69,9 +78,14 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
       })
       .then(() => {})
       .catch((err) => {
-        setIsLoading(false);
-        console.log(err);
+        if (err.code !== 'ERR_CANCELED') {
+          setIsLoading(false);
+          console.log(err);
+        }
       });
+    return () => {
+      controller.abort();
+    };
   }, [page, typeOfPosts]);
 
   const handleDeletedItem = (postId: string) => {
@@ -91,14 +105,11 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
       {posts.length === 0 ? (
         <Fragment>
           <LoadingPreviwPosts />
-          <LoadingPreviwPosts />
-          <LoadingPreviwPosts />
-          <LoadingPreviwPosts />
         </Fragment>
       ) : (
         ''
       )}
-      {endOfPosts && <Loader isLoading={isLoading} />}
+      {/* {!endOfPosts && <Loader isLoading={isLoading} />} */}
     </Container>
   );
 };

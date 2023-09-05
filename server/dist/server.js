@@ -8,15 +8,17 @@ const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const path_1 = __importDefault(require("path"));
 const multer_1 = __importDefault(require("multer"));
-const { v4: uuidv4 } = require('uuid');
 const mongoose_1 = __importDefault(require("mongoose"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const postRoutes_1 = __importDefault(require("./routes/postRoutes"));
+const commentRoutes_1 = __importDefault(require("./routes/commentRoutes"));
+const socket_1 = __importDefault(require("./socket"));
 // .ENV import
 require('dotenv').config({ path: `${__dirname}/../.env` });
 const MONGO_URL = process.env.MONGO_URL;
 const PORT = process.env.PORT;
 const NODE_ENV = process.env.NODE_ENV;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 // Basic establishments
 const app = (0, express_1.default)();
 const fileStorage = multer_1.default.diskStorage({
@@ -53,6 +55,7 @@ app.use((req, res, next) => {
 // Routes setups
 app.use('/api/auth', authRoutes_1.default);
 app.use('/api/feed', postRoutes_1.default);
+app.use('/api/feed', commentRoutes_1.default);
 app.use((error, req, res, next) => {
     NODE_ENV === 'development' && console.log(error);
     const status = error.statusCode || 500;
@@ -66,7 +69,17 @@ mongoose_1.default
     useUnifiedTopology: true,
 })
     .then(() => {
-    return app.listen(PORT);
+    const server = app.listen(PORT);
+    const io = socket_1.default.init(server, {
+        cors: {
+            origin: FRONTEND_URL,
+            methods: ['GET, POST, PUT, PATCH, DELETE'],
+        },
+    });
+    io.on('connection', (socket) => {
+        console.log('Socket.io is connected!');
+    });
+    return;
 })
     .then(() => console.log('Dadabase connection and server are maintained successfully!'))
     .catch((err) => {

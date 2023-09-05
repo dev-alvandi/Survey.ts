@@ -8,9 +8,10 @@ import { isEditingHandler } from '../store/commentSlice';
 
 interface PostFormPropType {
   commentHandler: (arg0: string) => void;
+  isInputFocused: boolean;
 }
 
-const PostForm: FC<PostFormPropType> = ({ commentHandler }) => {
+const PostForm: FC<PostFormPropType> = ({ commentHandler, isInputFocused }) => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const dispatch = useAppDispatch();
 
@@ -24,7 +25,15 @@ const PostForm: FC<PostFormPropType> = ({ commentHandler }) => {
         inputRef.current.focus();
       }
     }
-  }, [editing.status, editing.text]);
+    if (inputRef.current && isInputFocused) {
+      inputRef.current.focus();
+    }
+  }, [editing.status, editing.text, isInputFocused]);
+
+  const submitButtonHandler = () => {
+    commentHandler(commentvalue);
+    setCommentvalue('');
+  };
 
   return (
     <Container>
@@ -44,7 +53,7 @@ const PostForm: FC<PostFormPropType> = ({ commentHandler }) => {
           children={'Post'}
           isLoading={false}
           className="btn"
-          onClick={commentHandler.bind(null, commentvalue)}
+          onClick={submitButtonHandler}
         />
       )}
       {commentvalue && editing.status && (
@@ -53,7 +62,7 @@ const PostForm: FC<PostFormPropType> = ({ commentHandler }) => {
             children={'Edit'}
             isLoading={false}
             className="btn"
-            onClick={commentHandler.bind(null, commentvalue)}
+            onClick={submitButtonHandler}
           />
           <Button
             children={'Cancel'}

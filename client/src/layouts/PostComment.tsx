@@ -3,17 +3,18 @@ import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import axios from 'axios';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import { UserSchemaTypes } from '../store/userSlice';
 import { BASE_API_IMAGE_url, BASE_API_URL } from '../utils/api';
 import dateFormatter from '../utils/dateFormatter';
 import numberOfLikesText from '../utils/numberOfLikesText';
 import OverlayModal from '../components/OverlayModal';
-import ServerMessage from '../components/ServerMessage';
-import { useNavigate } from 'react-router-dom';
 import { isEditingHandler } from '../store/commentSlice';
 import { useAppDispatch } from '../store/store';
 import { isEdited } from '../utils/isEdited';
+import toastOptions from '../utils/toastOptions';
 
 interface PostCommentPropType {
   comment: {
@@ -28,15 +29,11 @@ interface PostCommentPropType {
 }
 
 const PostComment: FC<PostCommentPropType> = ({ comment }) => {
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
   const [isYourComment, setIsYourComment] = useState(false);
   const [isDisplaySetting, setIsDisplayShowSetting] = useState(false);
   const [numberOfLikes, setNumberOfLikes] = useState(comment.likes.length);
-  const [serverMsg, setServerMsg] = useState<
-    { text: string; type: 'error' | 'success' | 'info' }[]
-  >([]);
 
   const [isLiked, setIsLiked] = useState(false);
 
@@ -68,15 +65,15 @@ const PostComment: FC<PostCommentPropType> = ({ comment }) => {
       )
       .then((data) => {
         if (data.status === 201) {
-          //
-          // console.log(data);
+          toast.success(data.data.msg, toastOptions);
           setIsLiked((prevState) => !prevState);
           setNumberOfLikes(data.data.likes);
         }
       })
       .catch(({ response }) => {
-        if (response.status === 401) {
-          navigate('/login');
+        const errStatusArray = [401, 422, 500];
+        if (errStatusArray.includes(response.status)) {
+          toast.error(response.data.msg, toastOptions);
         }
       });
   };
@@ -103,13 +100,14 @@ const PostComment: FC<PostCommentPropType> = ({ comment }) => {
       .then((res) => {
         if (res.status === 200) {
           console.log(res.data);
-          setServerMsg([{ text: res.data.msg, type: 'success' }]);
+          toast.success(res.data.msg, toastOptions);
         }
       })
-      .catch(({ response }) => {
-        if (response.status === 401) {
-          navigate('/login');
-        }
+      .catch((err) => {
+        console.log(err);
+        // if (response.status === 401) {
+        //   navigate('/login');
+        // }
       });
   };
 
@@ -119,8 +117,6 @@ const PostComment: FC<PostCommentPropType> = ({ comment }) => {
 
   return (
     <Fragment>
-      {serverMsg.length > 0 && <ServerMessage messageArray={serverMsg} />}
-
       {isDisplaySetting && (
         <Fragment>
           {ReactDOM.createPortal(
@@ -174,6 +170,7 @@ const PostComment: FC<PostCommentPropType> = ({ comment }) => {
           </div>
         </div>
       </Container>
+      <ToastContainer />
     </Fragment>
   );
 };
@@ -226,6 +223,9 @@ const Container = styled.div`
         .date {
         }
         .likes {
+        }
+        .edited {
+          font-style: italic;
         }
         .post-edit-delete {
           opacity: 0;

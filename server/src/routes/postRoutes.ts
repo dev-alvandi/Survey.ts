@@ -8,6 +8,7 @@ import {
   likePost,
   editPost,
   deletePost,
+  getMyPosts,
 } from '../controllers/postController';
 import isAuth from '../middleware/isAuth';
 
@@ -15,7 +16,9 @@ const router = Router();
 
 router.get('/receive-posts/', getPosts);
 
-router.get('/receive-post/:postId', isAuth, getPost);
+router.get('/receive-myPosts/', isAuth, getMyPosts);
+
+router.get('/receive-post/:postId', getPost);
 
 router.post(
   '/create-post',
@@ -38,7 +41,7 @@ router.put(
   '/edit-post/:postId',
   isAuth,
   [
-    body('title', 'Please write a title longer than 5 characters..').isLength({
+    body('title', 'Please write a title longer than 5 characters.').isLength({
       min: 5,
     }),
     body(

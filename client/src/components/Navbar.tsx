@@ -1,18 +1,19 @@
-import { FC, Fragment } from 'react';
+import { FC, Fragment, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import logo from '../assets/logo.png';
-import { UserSchemaTypes } from '../store/userSlice';
 import { BASE_API_IMAGE_url } from '../utils/api';
+import { useAppSelector } from '../store/store';
 
 interface NavbarPropTypes {
   logoutHandler: () => void;
-  user: UserSchemaTypes | any;
-  isAuth: boolean;
 }
 
-const Navbar: FC<NavbarPropTypes> = ({ user, logoutHandler, isAuth }) => {
+const Navbar: FC<NavbarPropTypes> = ({ logoutHandler }) => {
+  const user = useAppSelector((state) => state.user.user);
+  const isAuth = useAppSelector((state) => state.user.isAuth);
+
   const navigate = useNavigate();
   return (
     <Container>
@@ -54,11 +55,12 @@ const Navbar: FC<NavbarPropTypes> = ({ user, logoutHandler, isAuth }) => {
               Logout
             </span>
             {isAuth && user && (
-              <span className="link">
+              <span className="link user">
                 <img
                   src={`${BASE_API_IMAGE_url}/${user.avatar}`}
                   alt={user.name}
                 />
+                <span>{user.name}</span>
               </span>
             )}
           </Fragment>
@@ -106,17 +108,20 @@ const Container = styled.nav`
       &:hover {
         color: #fff;
       }
+    }
+    .user {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: default;
       img {
-        padding: 0.5rem 0;
+        padding: 0.5rem 0.5rem;
         height: var(--nav-height);
+        width: var(--nav-height);
+        object-fit: cover;
         border-radius: 50%;
         cursor: default;
       }
-    }
-    .user-name {
-      padding: 0.5rem 0.5rem;
-      background-color: #fff;
-      border-radius: 0.2rem;
     }
   }
   .RightSide {

@@ -6,10 +6,11 @@ export interface UserType {
   name: string;
   email: string;
   password: string;
-  avatar?: string;
+  avatar: string;
   resetToken?: string;
   resetTokenExpiration?: Date;
   likedPosts?: Types.ObjectId[];
+  likedComments?: Types.ObjectId[];
   myPosts: Types.ObjectId[];
 }
 
@@ -37,6 +38,12 @@ const userSchema = new Schema<UserType>({
       ref: 'Post',
     },
   ],
+  likedComments: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Comment',
+    },
+  ],
   myPosts: [
     {
       type: Schema.Types.ObjectId,
@@ -44,5 +51,13 @@ const userSchema = new Schema<UserType>({
     },
   ],
 });
+
+userSchema.methods.toJSON = function () {
+  const copyObj = this.toObject();
+  if (copyObj.password) {
+    delete copyObj.password;
+  }
+  return copyObj;
+};
 
 export default model('User', userSchema);

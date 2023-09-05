@@ -1,10 +1,12 @@
 import { NextFunction, RequestHandler, Response } from 'express';
 import { Types } from 'mongoose';
 import { validationResult } from 'express-validator';
+
+import Socket from '../socket';
 import Post, { PostType } from '../models/postModel';
 import User, { UserType } from '../models/userModel';
 import { clearImage } from '../utils/clearImageHandler';
-import { UserAuthInfoRequest } from '../utils/typeDefinitions';
+import customError from '../utils/customError';
 
 export const getPosts: RequestHandler = (req: any, res, next) => {
   const { userId } = req.query;
@@ -31,6 +33,7 @@ export const getPosts: RequestHandler = (req: any, res, next) => {
           isUser: false,
         });
       }
+      console.log(userId, req.userId);
       return User.findById(req.userId).populate({
         path: 'myPosts',
         populate: { path: 'creator' },
@@ -77,9 +80,77 @@ export const getPosts: RequestHandler = (req: any, res, next) => {
     });
 };
 
+export const getMyPosts: RequestHandler = (req: any, res, next) => {
+  const { userId, page } = req.query;
+  const currPage: number = +page! || 1;
+  const perPage = 5;
+  let totalItems;
+  let loadedPosts: PostType[] = [];
+  return Post.find({ creator: new Types.ObjectId(userId) })
+    .countDocuments()
+    .then((count) => {
+      totalItems = count;
+      return Post.find({ creator: new Types.ObjectId(userId) })
+        .populate('creator')
+        .skip((currPage - 1) * perPage)
+        .limit(perPage);
+    })
+    .then((posts): any => {
+      loadedPosts = posts;
+      if (!userId) {
+        throw customError('User id not found', 422);
+      }
+      // console.log(userId, req.userId);
+      return User.findById(req.userId).populate({
+        path: 'myPosts',
+        populate: { path: 'creator' },
+      });
+    })
+    .then((user) => {
+      if (userId) {
+        if (!user) {
+          return res.status(422).json({
+            msg: 'User not found.',
+            isUser: false,
+          });
+        }
+        const updatedPosts = loadedPosts.map((post) => {
+          let loadedCreator: UserType;
+          const isLiked = user.likedPosts!.find(
+            (likedPost: Types.ObjectId) =>
+              likedPost.toString() === post._id.toString()
+          );
+          const newPost = {
+            // @ts-ignore
+            ...post.toObject(),
+            isLiked: isLiked ? true : false,
+            // @ts-ignore
+            creator: post.toObject().creator,
+          };
+
+          return newPost;
+        });
+
+        return res.status(200).json({
+          msg: 'Fetched posts successfully.',
+          posts: [...updatedPosts],
+          isUser: true,
+        });
+      }
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
 export const getPost: RequestHandler = (req, res, next) => {
   const { postId } = req.params;
   Post.findById(postId)
+    .populate('creator')
+    .populate({ path: 'comments', populate: { path: 'creator' } })
     .then((post) => {
       if (!post) {
         const error: any = new Error('No post with this credential was found!');
@@ -207,7 +278,7 @@ export const likePost: RequestHandler = (req, res, next) => {
       }
 
       res.status(201).json({
-        msg: 'Post created successfully.',
+        msg: `Post is ${isLiked ? 'liked' : 'unliked'} successfully.`,
         likes: updatedPost.likes.length,
       });
     })
@@ -223,10 +294,11 @@ export const editPost: RequestHandler = (req: any, res, next) => {
   //* Validation Check
   const validationErrors = validationResult(req);
   if (!validationErrors.isEmpty()) {
-    const error: any = new Error('Validation failed.');
-    error.statusCode = 422;
-    error.data = validationErrors.array();
-    throw error;
+    throw customError(
+      'Validation failed.',
+      422,
+      validationErrors.array().map((errObject) => errObject.msg)
+    );
   }
 
   const { postId } = req.params;
@@ -236,27 +308,25 @@ export const editPost: RequestHandler = (req: any, res, next) => {
     imageUrl = req.file.path;
   }
   if (!imageUrl) {
-    const err: any = new Error('No image has been picked!');
-    err.statuscode = 422;
-    throw err;
+    throw customError('No image has been picked!', 422);
   }
 
   Post.findById(postId)
     .then((post) => {
       if (!post) {
-        const error: any = new Error(
-          'No post with the sent credentials was found!'
+        throw customError(
+          'No post with the sent credentials was found!',
+          422,
+          validationErrors.array().map((errObject) => errObject.msg)
         );
-        error.statusCode = 422;
-        error.data = validationErrors.array();
-        throw error;
       }
 
       if (post.creator.toString() !== req.userId) {
-        const error: any = new Error('User is not authorized!');
-        error.statusCode = 403;
-        error.data = validationErrors.array();
-        throw error;
+        throw customError(
+          'User is not authorized!',
+          403,
+          validationErrors.array().map((errObject) => errObject.msg)
+        );
       }
 
       if (imageUrl !== post.imageUrl) {
@@ -314,7 +384,7 @@ export const deletePost: RequestHandler = (req: any, res, next) => {
       return user.save();
     })
     .then((result) => {
-      console.log(result);
+      // console.log(result);
       res.status(200).json({ msg: 'Post deleted successfully!' });
     })
     .catch((err) => {

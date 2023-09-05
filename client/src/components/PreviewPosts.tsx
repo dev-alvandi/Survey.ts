@@ -1,15 +1,15 @@
-import { FC, useState } from 'react';
+import { FC, Fragment, useState } from 'react';
 import styled from 'styled-components';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
 
 import { PostSchemaTypes } from '../store/postSlice';
-// import Textarea from './Textarea';
-// import Button from './Button';
 import { BASE_API_IMAGE_url, BASE_API_URL } from '../utils/api';
-import { useNavigate } from 'react-router-dom';
 import PostHeader from '../layouts/PostHeader';
 import PostActions from '../layouts/PostActions';
 import PostForm from '../layouts/PostForm';
-import axios from 'axios';
+import toastOptions from '../utils/toastOptions';
 
 interface PreviewPostsPropTypes {
   post: PostSchemaTypes;
@@ -24,6 +24,7 @@ const PreviewPosts: FC<PreviewPostsPropTypes> = ({
 
   // const [commentvalue, setCommentvalue] = useState('');
   const [isShowMore, setIsShowMore] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const routingToComplePostHandler = () => {
     navigate(`/post/${post._id}`);
@@ -43,7 +44,7 @@ const PreviewPosts: FC<PreviewPostsPropTypes> = ({
         config
       )
       .then((res) => {
-        console.log(res);
+        toast.success(res.data.msg, toastOptions);
       })
       .catch(({ response }) => {
         if (response.status === 401) {
@@ -53,45 +54,57 @@ const PreviewPosts: FC<PreviewPostsPropTypes> = ({
   };
 
   return (
-    <Section>
-      <div className="post-header">
-        <PostHeader handleDeletedItem={handleDeletedItem} post={post} />
-      </div>
+    <Fragment>
+      <ToastContainer />
+      <Section>
+        <div className="post-header">
+          <PostHeader handleDeletedItem={handleDeletedItem} post={post} />
+        </div>
 
-      <div className="post-container">
-        <img
-          src={`${BASE_API_IMAGE_url}/${post.imageUrl}`}
-          alt={post.title}
-          className="img-post"
-          onClick={routingToComplePostHandler}
-        />
-      </div>
+        <div className="post-container" onClick={routingToComplePostHandler}>
+          <img
+            src={`${BASE_API_IMAGE_url}/${post.imageUrl}`}
+            alt={post.title}
+            className="img-post"
+          />
+        </div>
 
-      <div className="post-details">
-        <PostActions post={post} />
+        <div className="post-details">
+          <PostActions
+            post={post}
+            focusingOnInputHandler={() =>
+              setIsInputFocused((prevState) => !prevState)
+            }
+          />
 
-        <div className="caption-container">
-          <span className="creator bold">{post.creator.name}</span>
-          <span className="caption-body">
-            {post.caption.length > 100 && !isShowMore
-              ? `${post.caption.slice(0, 100)}...`
-              : post.caption}
-          </span>
-          <div className="more-btn" onClick={() => setIsShowMore(!isShowMore)}>
-            {post.caption.length > 100 ? (isShowMore ? 'less' : 'more') : ''}
+          <div className="caption-container">
+            <span className="creator bold">{post.creator.name}</span>
+            <span className="caption-body">
+              {post.caption.length > 100 && !isShowMore
+                ? `${post.caption.slice(0, 100)}...`
+                : post.caption}
+            </span>
+            <div
+              className="more-btn"
+              onClick={() => setIsShowMore(!isShowMore)}>
+              {post.caption.length > 100 ? (isShowMore ? 'less' : 'more') : ''}
+            </div>
+          </div>
+
+          <div className="comments-container">
+            <span className="view-comments">
+              {post.comments && post.comments.length > 0
+                ? `View all ${post.comments.length} comments`
+                : 'No comment yet!'}
+            </span>
+            <PostForm
+              commentHandler={commentHandler}
+              isInputFocused={isInputFocused}
+            />
           </div>
         </div>
-
-        <div className="comments-container">
-          <span className="view-comments">
-            {post.comments && post.comments.length > 0
-              ? `View all ${post.comments.length} comments`
-              : 'No comment yet!'}
-          </span>
-          <PostForm commentHandler={commentHandler} />
-        </div>
-      </div>
-    </Section>
+      </Section>
+    </Fragment>
   );
 };
 
@@ -111,10 +124,29 @@ const Section = styled.section`
   }
 
   .post-container {
+    position: relative;
+    height: 100%;
     width: 100%;
     .img-post {
       width: 100%;
+    }
+
+    &::after {
+      content: '';
+      width: 100%;
+      height: 100%;
+      background-color: transparent;
+      position: absolute;
+      top: 0;
+      left: 0;
       cursor: pointer;
+      transition: background-color 250ms ease-in-out;
+    }
+
+    &:hover {
+      &::after {
+        background-color: #ffffff3e;
+      }
     }
   }
 

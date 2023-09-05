@@ -3,19 +3,21 @@ import express, { NextFunction, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import path from 'path';
 import multer, { FileFilterCallback } from 'multer';
-const { v4: uuidv4 } = require('uuid');
-import mongoose, { ConnectOptions, Types } from 'mongoose';
+import mongoose, { ConnectOptions } from 'mongoose';
 
 // custom imports
 import User from './models/userModel';
 import authRoutes from './routes/authRoutes';
 import postRoutes from './routes/postRoutes';
+import commentRoutes from './routes/commentRoutes';
+import Socket from './socket';
 
 // .ENV import
 require('dotenv').config({ path: `${__dirname}/../.env` });
 const MONGO_URL: string = process.env.MONGO_URL as string;
 const PORT: string = process.env.PORT as string;
 const NODE_ENV: string = process.env.NODE_ENV as string;
+const FRONTEND_URL: string = process.env.FRONTEND_URL as string;
 
 // Basic establishments
 const app = express();
@@ -72,6 +74,7 @@ app.use((req, res, next) => {
 // Routes setups
 app.use('/api/auth', authRoutes);
 app.use('/api/feed', postRoutes);
+app.use('/api/feed', commentRoutes);
 
 // Error handling middleware
 type ErrorType = {
@@ -93,7 +96,18 @@ mongoose
     useUnifiedTopology: true,
   } as ConnectOptions)
   .then(() => {
-    return app.listen(PORT);
+    const server = app.listen(PORT);
+    const io = Socket.init(server, {
+      cors: {
+        origin: FRONTEND_URL,
+        methods: ['GET, POST, PUT, PATCH, DELETE'],
+      },
+    });
+    io.on('connection', (socket: any) => {
+      console.log('Socket.io is connected!');
+    });
+
+    return;
   })
   .then(() =>
     console.log('Dadabase connection and server are maintained successfully!')

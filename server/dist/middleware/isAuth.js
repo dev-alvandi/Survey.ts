@@ -4,13 +4,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const customError_1 = __importDefault(require("../utils/customError"));
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 exports.default = (req, res, next) => {
     const authHeader = req.get('Authorization');
     if (!authHeader) {
-        const error = new Error('Not authenticated.');
-        error.statusCode = 401;
-        throw error;
+        throw (0, customError_1.default)('Not authenticated!', 401);
     }
     const token = authHeader.split(' ')[1];
     let decodedToken;
@@ -18,13 +17,11 @@ exports.default = (req, res, next) => {
         decodedToken = jsonwebtoken_1.default.verify(token, JWT_SECRET_KEY);
     }
     catch (error) {
-        error.statusCode = 500;
+        error.statusCode = 401;
         next(error);
     }
     if (!decodedToken) {
-        const error = new Error('Not authenticated.');
-        error.statusCode = 401;
-        throw error;
+        throw (0, customError_1.default)('Not authenticated!', 401);
     }
     req.userId = decodedToken.userId;
     next();

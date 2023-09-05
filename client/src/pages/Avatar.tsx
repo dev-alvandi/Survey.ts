@@ -1,21 +1,29 @@
 import styled from 'styled-components';
-import ImageUploader from '../components/ImageUploader';
-import SingleFileUploader from '../components/SingleFileUploader';
-import { FormEvent, useState } from 'react';
+import { FormEvent, Fragment, useState } from 'react';
 import Button from '../components/Button';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import { useAppDispatch } from '../store/store';
+
+import ImageUploader from '../components/ImageUploader';
+import SingleFileUploader from '../components/SingleFileUploader';
 import { BASE_API_URL } from '../utils/api';
 import { useLocation, useNavigate } from 'react-router-dom';
+import useAuth from '../hooks/useAuth';
+import toastOptions from '../utils/toastOptions';
+import { changeAvatar } from '../store/userSlice';
 
 const Avatar = () => {
+  const dispatch = useAppDispatch();
+
   const location = useLocation();
   const navigate = useNavigate();
-
-  console.log(location);
 
   const [avatarUrl, setAvatarUrl] = useState('');
   const [avatar, setAvatar] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const { user } = useAuth();
 
   const onChangeUploadHandler = (e: any) => {
     const imageFile = e.target.files[0];
@@ -39,12 +47,10 @@ const Avatar = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const userId = location.state.userId;
-
     //! Submitting the avatar!
     const formData = new FormData();
     formData.append('avatar', avatar);
-    if (location.pathname === '/"/edit-avatar"') {
+    if (location.pathname === '/edit-avatar') {
       formData.append('isEditing', 'true');
     }
 
@@ -53,50 +59,57 @@ const Avatar = () => {
         Authorization: 'Bearer ' + localStorage.getItem('token'),
       },
     };
-
     axios
-      .put(`${BASE_API_URL}/auth/set-avatar/${userId}`, formData, config)
+      .put(`${BASE_API_URL}/auth/set-avatar/${user._id}`, formData, config)
       .then((res) => {
         setIsLoading(false);
         if (res.status === 201) {
+          dispatch(changeAvatar(res.data.image));
           navigate('/login');
         }
       })
-      .catch((err) => {
+      .catch(({ response }) => {
         setIsLoading(false);
-        console.log(err);
+        if (response.data.data) {
+          response.data.data.forEach((errMsg: string) => {
+            toast.error(errMsg, toastOptions);
+          });
+        }
       });
   };
   return (
-    <Container className="pageContainer">
-      <div className="title">
-        <h1>Please upload your profile picture.</h1>
-      </div>
-      <form onSubmit={avatarSubmitHandler}>
-        <div className="imageUploader">
-          {!avatarUrl ? (
-            <SingleFileUploader
-              onChangeUploadHandler={onChangeUploadHandler}
-              onDropUploadHandler={onDropUploadHandler}
-              removeUploadedImgHandler={removeUploadedImgHandler}
-            />
-          ) : (
-            <ImageUploader
-              image={{
-                url: avatarUrl,
-                name: 'This',
-              }}
-              removeUploadedImgHandler={removeUploadedImgHandler}
-            />
-          )}
+    <Fragment>
+      <ToastContainer />
+      <Container className="pageContainer">
+        <div className="title">
+          <h1>Please upload your profile picture.</h1>
         </div>
-        <div className="button-container">
-          <Button type="submit" isLoading={isLoading}>
-            Submit
-          </Button>
-        </div>
-      </form>
-    </Container>
+        <form onSubmit={avatarSubmitHandler}>
+          <div className="imageUploader">
+            {!avatarUrl ? (
+              <SingleFileUploader
+                onChangeUploadHandler={onChangeUploadHandler}
+                onDropUploadHandler={onDropUploadHandler}
+                removeUploadedImgHandler={removeUploadedImgHandler}
+              />
+            ) : (
+              <ImageUploader
+                image={{
+                  url: avatarUrl,
+                  name: 'This',
+                }}
+                removeUploadedImgHandler={removeUploadedImgHandler}
+              />
+            )}
+          </div>
+          <div className="button-container">
+            <Button type="submit" isLoading={isLoading}>
+              Submit
+            </Button>
+          </div>
+        </form>
+      </Container>
+    </Fragment>
   );
 };
 

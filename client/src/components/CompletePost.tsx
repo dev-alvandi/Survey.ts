@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/store';
 import axios from 'axios';
 import openSocket from 'socket.io-client';
+import { ToastContainer, toast } from 'react-toastify';
 
 import {
   BASE_API_IMAGE_url,
@@ -16,6 +17,8 @@ import PostActions from '../layouts/PostActions';
 import PostForm from '../layouts/PostForm';
 import PostComment from '../layouts/PostComment';
 import { editCommentAction, isEditingHandler } from '../store/commentSlice';
+import toastOptions from '../utils/toastOptions';
+// import ServerMessage, { serverMessageProps } from './ServerMessage';
 
 const CompletePost = () => {
   const navigate = useNavigate();
@@ -24,6 +27,8 @@ const CompletePost = () => {
 
   const [post, setPost] = useState<PostSchemaTypes>();
   const editing = useAppSelector((state) => state.comment.editing);
+  // const [serverMessage, setServerMessage] = useState<serverMessageProps[]>([]);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   useEffect(() => {
     const socket = openSocket(`${BASE_BACKEND_URL}`);
@@ -84,6 +89,7 @@ const CompletePost = () => {
       )
       .then((res) => {
         if (res.status === 200) {
+          toast.success(res.data.msg, toastOptions);
         }
       })
       .catch(({ response }) => {
@@ -94,38 +100,51 @@ const CompletePost = () => {
   };
 
   return (
-    <Container>
-      {post && (
-        <Fragment>
-          <div className="post-image">
-            <img src={`${BASE_API_IMAGE_url}/${post.imageUrl}`} alt="" />
-          </div>
-          <div className="post-details">
-            <div className="post-creator">
-              <div className="post-header">
-                <PostHeader post={post} />
+    <Fragment>
+      <Container className="pageContainer">
+        {post && (
+          <Fragment>
+            <div className="post-image">
+              <img src={`${BASE_API_IMAGE_url}/${post.imageUrl}`} alt="" />
+            </div>
+            <div className="post-details">
+              <div className="post-creator">
+                <div className="post-header">
+                  <PostHeader post={post} />
+                </div>
+                <div className="post-caption">{post.caption}</div>
               </div>
-              <div className="post-caption">{post.caption}</div>
+              <div className="comments-container">
+                {post.comments && post.comments.length > 0 ? (
+                  post.comments.map((comment: any) => (
+                    <PostComment key={comment._id} comment={comment} />
+                  ))
+                ) : (
+                  <div className="no-comment">No Comments yet!</div>
+                )}
+              </div>
+              <div className="post-actions">
+                <PostActions
+                  post={post}
+                  focusingOnInputHandler={() =>
+                    setIsInputFocused((prevState) => !prevState)
+                  }
+                />
+              </div>
+              <div className="comment-form">
+                {params.postId && (
+                  <PostForm
+                    commentHandler={commentHandler}
+                    isInputFocused={isInputFocused}
+                  />
+                )}
+              </div>
             </div>
-            <div className="comments-container">
-              {post.comments && post.comments.length > 0 ? (
-                post.comments.map((comment: any) => (
-                  <PostComment key={comment._id} comment={comment} />
-                ))
-              ) : (
-                <div className="no-comment">No Comments yet!</div>
-              )}
-            </div>
-            <div className="post-actions">
-              <PostActions post={post} />
-            </div>
-            <div className="comment-form">
-              {params.postId && <PostForm commentHandler={commentHandler} />}
-            </div>
-          </div>
-        </Fragment>
-      )}
-    </Container>
+          </Fragment>
+        )}
+      </Container>
+      <ToastContainer />
+    </Fragment>
   );
 };
 
@@ -134,15 +153,11 @@ export default CompletePost;
 const Container = styled.div`
   --image-container-width: 70%;
 
-  width: 100%;
-  height: calc(100vh - 3rem);
-  padding: 6rem 4rem 0 4rem;
   position: relative;
   border-radius: 0.2rem;
   display: flex;
-
+  width: 45%;
   .post-image {
-    width: var(--image-container-width);
     img {
       width: 100%;
       height: 100%;
@@ -151,10 +166,10 @@ const Container = styled.div`
   }
 
   .post-details {
-    width: calc(100% - var(--image-container-width));
+    width: 100%;
     display: flex;
     flex-direction: column;
-    padding-left: 1rem;
+    padding: 1rem;
 
     & > div {
       border-top: 1px solid #cbcbcb;
@@ -178,12 +193,25 @@ const Container = styled.div`
     }
 
     .comments-container {
-      height: calc(100% - 13rem);
-      overflow: scroll;
+      max-height: 25rem;
+      height: 40rem;
+      overflow-x: hidden;
+
       &::-webkit-scrollbar {
-        display: none;
-        scrollbar-width: none;
-        -ms-scrollbar-width: none;
+        width: 0.75rem;
+        background-color: #f5f5f5;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        border-radius: 0.7rem;
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+        background-color: var(--primary-purple);
+      }
+
+      &::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+        border-radius: 0.7rem;
+        background-color: #f5f5f5;
       }
       .no-comment {
         height: 100%;
@@ -207,5 +235,12 @@ const Container = styled.div`
       display: flex;
       align-items: center;
     }
+  }
+
+  @media (max-width: 768px) {
+    width: 80%;
+  }
+  @media (max-width: 480px) {
+    width: 95%;
   }
 `;

@@ -21,30 +21,13 @@ const postSchema = new mongoose_1.Schema({
             default: 0,
         },
     ],
-    comments: {
-        type: [
-            {
-                userId: {
-                    type: mongoose_1.Schema.Types.ObjectId,
-                    ref: 'User',
-                    required: true,
-                },
-                text: {
-                    type: String,
-                    required: true,
-                },
-                updated_at: {
-                    type: Date,
-                    required: true,
-                },
-                created_at: {
-                    type: Date,
-                    required: true,
-                },
-            },
-        ],
-        required: false,
-    },
+    comments: [
+        {
+            type: mongoose_1.Schema.Types.ObjectId,
+            ref: 'Comment',
+            required: true,
+        },
+    ],
     creator: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'User',

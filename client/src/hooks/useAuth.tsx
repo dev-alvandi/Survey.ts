@@ -11,7 +11,7 @@ const useAuth = () => {
   const user = useAppSelector((state) => state.user.user);
   const isAuth = useAppSelector((state) => state.user.isAuth);
 
-  // console.log(isAuth);
+  // console.log(user);
 
   useEffect(() => {
     const token = localStorage.getItem('token');

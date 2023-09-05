@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logout = exports.newPassword = exports.forgottenPassword = exports.login = exports.setAvatar = exports.register = void 0;
+exports.newPassword = exports.forgottenPassword = exports.login = exports.setAvatar = exports.register = exports.getUser = void 0;
 const express_validator_1 = require("express-validator");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const crypto_1 = __importDefault(require("crypto"));
@@ -21,6 +21,8 @@ const nodemailer_1 = __importDefault(require("nodemailer"));
 const nodemailer_sendgrid_transport_1 = __importDefault(require("nodemailer-sendgrid-transport"));
 const userModel_1 = __importDefault(require("../models/userModel"));
 const resetPasswordTemplate_1 = __importDefault(require("../utils/resetPasswordTemplate"));
+const customError_1 = __importDefault(require("../utils/customError"));
+const clearImageHandler_1 = require("../utils/clearImageHandler");
 require('dotenv').config({ path: `${__dirname}/../../.env` });
 const FRONTEND_URL = process.env.FRONTEND_URL;
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
@@ -30,14 +32,33 @@ let transporter = nodemailer_1.default.createTransport((0, nodemailer_sendgrid_t
         api_key: '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',
     },
 }));
+const getUser = (req, res, next) => {
+    const { userId } = req.params;
+    if (!userId) {
+        throw (0, customError_1.default)('No user id was set!', 422);
+    }
+    userModel_1.default.findById(userId)
+        .then((user) => {
+        if (!user) {
+            throw (0, customError_1.default)('No user with the sent credentials was found!', 422, [
+                'User is not found!',
+            ]);
+        }
+        res.status(200).json({ msg: 'User found!', user: user.toJSON() });
+    })
+        .catch((err) => {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    });
+};
+exports.getUser = getUser;
 const register = (req, res, next) => {
     // Validation check!
     const validationErrors = (0, express_validator_1.validationResult)(req);
     if (!validationErrors.isEmpty()) {
-        const error = new Error('Validation failed.');
-        error.statusCode = 422;
-        error.data = validationErrors.array();
-        throw error;
+        throw (0, customError_1.default)('Validation failed.', 422, validationErrors.array().map((errObject) => errObject.msg));
     }
     const { name, email, password } = req.body;
     let newUser;
@@ -50,6 +71,7 @@ const register = (req, res, next) => {
             name: storingName,
             email: email.toLowerCase(),
             password: hashedPassword,
+            avatar: 'images/defaulAvatar.jpg',
         });
         newUser = yield user.save();
         return email;
@@ -81,17 +103,13 @@ const register = (req, res, next) => {
 exports.register = register;
 const setAvatar = (req, res, next) => {
     if (!req.files) {
-        const error = new Error('File upload invalid');
-        error.statusCode = 422;
-        error.data = [{ msg: 'No avatar image is provided.' }];
-        throw error;
+        throw (0, customError_1.default)('File upload invalid.', 422, [
+            'No avatar image is provided.',
+        ]);
     }
     const { userId } = req.params;
     if (!userId) {
-        const error = new Error('No user id was set.');
-        error.statusCode = 404;
-        error.data = [{ msg: 'No user id was set.' }];
-        throw error;
+        throw (0, customError_1.default)('No user id was set!', 422);
     }
     // @ts-ignore
     const splittedAvatarUrl = req.files.avatar[0].path.split('/');
@@ -99,17 +117,20 @@ const setAvatar = (req, res, next) => {
     userModel_1.default.findById(userId)
         .then((user) => {
         if (!user) {
-            const error = new Error('No user with the sent credentials was found!');
-            error.statusCode = 422;
-            error.data = [{ msg: 'User is not found.' }];
-            throw error;
+            throw (0, customError_1.default)('No user with the sent credentials was found!', 422, [
+                'User is not found!',
+            ]);
+        }
+        if (avatarUrl !== user.avatar) {
+            (0, clearImageHandler_1.clearImage)(user.avatar);
         }
         user.avatar = avatarUrl;
         return user.save();
     })
-        .then((result) => {
+        .then((updatedUser) => {
         res.status(201).json({
             msg: 'Avatar was changed successfully.',
+            image: updatedUser.avatar,
         });
     })
         .catch((err) => {
@@ -123,29 +144,21 @@ exports.setAvatar = setAvatar;
 const login = (req, res, next) => {
     const validationErrors = (0, express_validator_1.validationResult)(req);
     if (!validationErrors.isEmpty()) {
-        const error = new Error('Validation failed.');
-        error.statusCode = 422;
-        error.data = validationErrors.array();
-        throw error;
+        throw (0, customError_1.default)('Validation failed.', 422, validationErrors.array().map((errObject) => errObject.msg));
     }
     const { email, password } = req.body;
     let loadedUser;
     userModel_1.default.findOne({ email: email.toLowerCase() })
         .then((user) => {
         if (!user) {
-            const error = new Error('No user with the sent credentials was found!');
-            error.statusCode = 422;
-            error.data = validationErrors.array();
-            throw error;
+            throw (0, customError_1.default)('No user with the sent credentials was found!', 422);
         }
         loadedUser = user;
         return bcrypt_1.default.compare(password, user.password);
     })
         .then((isPasswordMatch) => {
         if (!isPasswordMatch) {
-            const error = new Error('Password is inccorect!');
-            error.statusCode = 401;
-            throw error;
+            throw (0, customError_1.default)('Password is inccorect!', 401);
         }
         const token = jsonwebtoken_1.default.sign({
             name: loadedUser.name,
@@ -154,13 +167,8 @@ const login = (req, res, next) => {
         }, JWT_SECRET_KEY, { expiresIn: JWT_EXPIRES_IN });
         return res.status(200).json({
             msg: 'You are logged in :)',
-            user: {
-                userId: loadedUser._id.toString(),
-                name: loadedUser.name,
-                email: loadedUser.email,
-                likedPosts: loadedUser.likedPosts,
-                token: token,
-            },
+            user: loadedUser.toJSON(),
+            token: token,
         });
     })
         .catch((err) => {
@@ -215,12 +223,3 @@ const newPassword = (req, res, next) => {
     console.log(rePassword);
 };
 exports.newPassword = newPassword;
-const logout = (req, res, next) => {
-    // req.session.destroy((err) => {
-    //   if (err) {
-    //     console.log(err);
-    //   }
-    //   return res.json({ isLoggedIn: false });
-    // });
-};
-exports.logout = logout;

@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { Result, validationResult } from 'express-validator';
+import { validationResult } from 'express-validator';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
@@ -8,6 +8,8 @@ import sendgridTransport from 'nodemailer-sendgrid-transport';
 
 import User, { UserType } from '../models/userModel';
 import emailHtmlTemplate from '../utils/resetPasswordTemplate';
+import customError from '../utils/customError';
+import { clearImage } from '../utils/clearImageHandler';
 
 require('dotenv').config({ path: `${__dirname}/../../.env` });
 const FRONTEND_URL: string = process.env.FRONTEND_URL as string;
@@ -23,14 +25,39 @@ let transporter = nodemailer.createTransport(
   })
 );
 
+export const getUser: RequestHandler = (req, res, next) => {
+  const { userId } = req.params;
+  if (!userId) {
+    throw customError('No user id was set!', 422);
+  }
+
+  User.findById(userId)
+
+    .then((user) => {
+      if (!user) {
+        throw customError('No user with the sent credentials was found!', 422, [
+          'User is not found!',
+        ]);
+      }
+      res.status(200).json({ msg: 'User found!', user: user.toJSON() });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
 export const register: RequestHandler = (req, res, next) => {
   // Validation check!
   const validationErrors = validationResult(req);
   if (!validationErrors.isEmpty()) {
-    const error: any = new Error('Validation failed.');
-    error.statusCode = 422;
-    error.data = validationErrors.array();
-    throw error;
+    throw customError(
+      'Validation failed.',
+      422,
+      validationErrors.array().map((errObject) => errObject.msg)
+    );
   }
 
   const { name, email, password } = req.body;
@@ -44,6 +71,7 @@ export const register: RequestHandler = (req, res, next) => {
         name: storingName,
         email: email.toLowerCase(),
         password: hashedPassword,
+        avatar: 'images/defaulAvatar.jpg',
       });
       newUser = await user.save();
       return email;
@@ -75,19 +103,15 @@ export const register: RequestHandler = (req, res, next) => {
 
 export const setAvatar: RequestHandler = (req, res, next) => {
   if (!req.files) {
-    const error: any = new Error('File upload invalid');
-    error.statusCode = 422;
-    error.data = [{ msg: 'No avatar image is provided.' }];
-    throw error;
+    throw customError('File upload invalid.', 422, [
+      'No avatar image is provided.',
+    ]);
   }
 
   const { userId } = req.params;
 
   if (!userId) {
-    const error: any = new Error('No user id was set.');
-    error.statusCode = 404;
-    error.data = [{ msg: 'No user id was set.' }];
-    throw error;
+    throw customError('No user id was set!', 422);
   }
 
   // @ts-ignore
@@ -97,20 +121,22 @@ export const setAvatar: RequestHandler = (req, res, next) => {
   User.findById(userId)
     .then((user) => {
       if (!user) {
-        const error: any = new Error(
-          'No user with the sent credentials was found!'
-        );
-        error.statusCode = 422;
-        error.data = [{ msg: 'User is not found.' }];
-        throw error;
+        throw customError('No user with the sent credentials was found!', 422, [
+          'User is not found!',
+        ]);
+      }
+
+      if (avatarUrl !== user.avatar) {
+        clearImage(user.avatar);
       }
 
       user.avatar = avatarUrl;
       return user.save();
     })
-    .then((result) => {
+    .then((updatedUser) => {
       res.status(201).json({
         msg: 'Avatar was changed successfully.',
+        image: updatedUser.avatar,
       });
     })
     .catch((err) => {
@@ -124,23 +150,19 @@ export const setAvatar: RequestHandler = (req, res, next) => {
 export const login: RequestHandler = (req, res, next) => {
   const validationErrors = validationResult(req);
   if (!validationErrors.isEmpty()) {
-    const error: any = new Error('Validation failed.');
-    error.statusCode = 422;
-    error.data = validationErrors.array();
-    throw error;
+    throw customError(
+      'Validation failed.',
+      422,
+      validationErrors.array().map((errObject) => errObject.msg)
+    );
   }
 
   const { email, password } = req.body;
-  let loadedUser: UserType;
+  let loadedUser: UserType | any;
   User.findOne({ email: email.toLowerCase() })
     .then((user) => {
       if (!user) {
-        const error: any = new Error(
-          'No user with the sent credentials was found!'
-        );
-        error.statusCode = 422;
-        error.data = validationErrors.array();
-        throw error;
+        throw customError('No user with the sent credentials was found!', 422);
       }
 
       loadedUser = user;
@@ -148,9 +170,7 @@ export const login: RequestHandler = (req, res, next) => {
     })
     .then((isPasswordMatch) => {
       if (!isPasswordMatch) {
-        const error: any = new Error('Password is inccorect!');
-        error.statusCode = 401;
-        throw error;
+        throw customError('Password is inccorect!', 401);
       }
       const token = jwt.sign(
         {
@@ -163,13 +183,8 @@ export const login: RequestHandler = (req, res, next) => {
       );
       return res.status(200).json({
         msg: 'You are logged in :)',
-        user: {
-          userId: loadedUser._id.toString(),
-          name: loadedUser.name,
-          email: loadedUser.email,
-          likedPosts: loadedUser.likedPosts,
-          token: token,
-        },
+        user: loadedUser.toJSON(),
+        token: token,
       });
     })
     .catch((err) => {
@@ -223,13 +238,4 @@ export const forgottenPassword: RequestHandler = (req, res, next) => {
 export const newPassword: RequestHandler = (req, res, next) => {
   const { rePassword, confirmRePassword } = req.body;
   console.log(rePassword);
-};
-
-export const logout: RequestHandler = (req, res, next) => {
-  // req.session.destroy((err) => {
-  //   if (err) {
-  //     console.log(err);
-  //   }
-  //   return res.json({ isLoggedIn: false });
-  // });
 };

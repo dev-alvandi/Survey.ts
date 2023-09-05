@@ -16,6 +16,7 @@ const express_1 = require("express");
 const express_validator_1 = require("express-validator");
 const userModel_1 = __importDefault(require("../models/userModel"));
 const authControllers_1 = require("../controllers/authControllers");
+const isAuth_1 = __importDefault(require("../middleware/isAuth"));
 const router = (0, express_1.Router)();
 // Post routes
 router.put('/register', [
@@ -52,7 +53,7 @@ router.put('/register', [
     })
         .trim(),
 ], authControllers_1.register);
-router.put('/set-avatar/:userId', authControllers_1.setAvatar);
+router.put('/set-avatar/:userId', isAuth_1.default, authControllers_1.setAvatar);
 router.post('/login', [
     (0, express_validator_1.body)('email')
         .trim()
@@ -67,6 +68,5 @@ router.post('/login', [
 ], authControllers_1.login);
 router.post('/forgottenpassword', authControllers_1.forgottenPassword);
 router.post('/new-password', authControllers_1.newPassword);
-// Get routes
-router.get('/logout', authControllers_1.logout);
+router.get('/get-user/:userId', isAuth_1.default, authControllers_1.getUser);
 exports.default = router;

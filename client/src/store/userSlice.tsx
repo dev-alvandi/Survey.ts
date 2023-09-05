@@ -48,6 +48,7 @@ export const fetchUserById = createAsyncThunk(
         config
       );
       if (response.status === 200) {
+        // console.log(response.data.user.avatar);
         return response.data.user;
       }
     } catch (error) {
@@ -84,6 +85,9 @@ export const userSlice = createSlice({
       state.isAuth = action.payload.isAuth;
       state.user = action.payload.user;
     },
+    changeAvatar: (state, action) => {
+      state.user = { ...state.user, avatar: action.payload };
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchUserById.fulfilled, (state, action) => {
@@ -97,4 +101,4 @@ export const resetTokenReducer = ResetTokenSlice.reducer;
 export const { addResetToken } = ResetTokenSlice.actions;
 
 export const userReducer = userSlice.reducer;
-export const { logout, login } = userSlice.actions;
+export const { logout, login, changeAvatar } = userSlice.actions;

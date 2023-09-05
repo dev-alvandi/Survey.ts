@@ -12,11 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deletePost = exports.editPost = exports.likePost = exports.CreatePost = exports.getPost = exports.getPosts = void 0;
+exports.deletePost = exports.editPost = exports.likePost = exports.CreatePost = exports.getPost = exports.getMyPosts = exports.getPosts = void 0;
+const mongoose_1 = require("mongoose");
 const express_validator_1 = require("express-validator");
 const postModel_1 = __importDefault(require("../models/postModel"));
 const userModel_1 = __importDefault(require("../models/userModel"));
 const clearImageHandler_1 = require("../utils/clearImageHandler");
+const customError_1 = __importDefault(require("../utils/customError"));
 const getPosts = (req, res, next) => {
     const { userId } = req.query;
     const currPage = +req.query.page || 1;
@@ -41,6 +43,7 @@ const getPosts = (req, res, next) => {
                 isUser: false,
             });
         }
+        console.log(userId, req.userId);
         return userModel_1.default.findById(req.userId).populate({
             path: 'myPosts',
             populate: { path: 'creator' },
@@ -77,9 +80,68 @@ const getPosts = (req, res, next) => {
     });
 };
 exports.getPosts = getPosts;
+const getMyPosts = (req, res, next) => {
+    const { userId, page } = req.query;
+    const currPage = +page || 1;
+    const perPage = 5;
+    let totalItems;
+    let loadedPosts = [];
+    return postModel_1.default.find({ creator: new mongoose_1.Types.ObjectId(userId) })
+        .countDocuments()
+        .then((count) => {
+        totalItems = count;
+        return postModel_1.default.find({ creator: new mongoose_1.Types.ObjectId(userId) })
+            .populate('creator')
+            .skip((currPage - 1) * perPage)
+            .limit(perPage);
+    })
+        .then((posts) => {
+        loadedPosts = posts;
+        if (!userId) {
+            throw (0, customError_1.default)('User id not found', 422);
+        }
+        // console.log(userId, req.userId);
+        return userModel_1.default.findById(req.userId).populate({
+            path: 'myPosts',
+            populate: { path: 'creator' },
+        });
+    })
+        .then((user) => {
+        if (userId) {
+            if (!user) {
+                return res.status(422).json({
+                    msg: 'User not found.',
+                    isUser: false,
+                });
+            }
+            const updatedPosts = loadedPosts.map((post) => {
+                let loadedCreator;
+                const isLiked = user.likedPosts.find((likedPost) => likedPost.toString() === post._id.toString());
+                const newPost = Object.assign(Object.assign({}, post.toObject()), { isLiked: isLiked ? true : false, 
+                    // @ts-ignore
+                    creator: post.toObject().creator });
+                return newPost;
+            });
+            return res.status(200).json({
+                msg: 'Fetched posts successfully.',
+                posts: [...updatedPosts],
+                isUser: true,
+            });
+        }
+    })
+        .catch((err) => {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    });
+};
+exports.getMyPosts = getMyPosts;
 const getPost = (req, res, next) => {
     const { postId } = req.params;
     postModel_1.default.findById(postId)
+        .populate('creator')
+        .populate({ path: 'comments', populate: { path: 'creator' } })
         .then((post) => {
         if (!post) {
             const error = new Error('No post with this credential was found!');
@@ -188,7 +250,7 @@ const likePost = (req, res, next) => {
             return;
         }
         res.status(201).json({
-            msg: 'Post created successfully.',
+            msg: `Post is ${isLiked ? 'liked' : 'unliked'} successfully.`,
             likes: updatedPost.likes.length,
         });
     })
@@ -204,10 +266,7 @@ const editPost = (req, res, next) => {
     //* Validation Check
     const validationErrors = (0, express_validator_1.validationResult)(req);
     if (!validationErrors.isEmpty()) {
-        const error = new Error('Validation failed.');
-        error.statusCode = 422;
-        error.data = validationErrors.array();
-        throw error;
+        throw (0, customError_1.default)('Validation failed.', 422, validationErrors.array().map((errObject) => errObject.msg));
     }
     const { postId } = req.params;
     const { title, caption } = req.body;
@@ -216,23 +275,15 @@ const editPost = (req, res, next) => {
         imageUrl = req.file.path;
     }
     if (!imageUrl) {
-        const err = new Error('No image has been picked!');
-        err.statuscode = 422;
-        throw err;
+        throw (0, customError_1.default)('No image has been picked!', 422);
     }
     postModel_1.default.findById(postId)
         .then((post) => {
         if (!post) {
-            const error = new Error('No post with the sent credentials was found!');
-            error.statusCode = 422;
-            error.data = validationErrors.array();
-            throw error;
+            throw (0, customError_1.default)('No post with the sent credentials was found!', 422, validationErrors.array().map((errObject) => errObject.msg));
         }
         if (post.creator.toString() !== req.userId) {
-            const error = new Error('User is not authorized!');
-            error.statusCode = 403;
-            error.data = validationErrors.array();
-            throw error;
+            throw (0, customError_1.default)('User is not authorized!', 403, validationErrors.array().map((errObject) => errObject.msg));
         }
         if (imageUrl !== post.imageUrl) {
             (0, clearImageHandler_1.clearImage)(post.imageUrl);
@@ -285,7 +336,7 @@ const deletePost = (req, res, next) => {
         return user.save();
     })
         .then((result) => {
-        console.log(result);
+        // console.log(result);
         res.status(200).json({ msg: 'Post deleted successfully!' });
     })
         .catch((err) => {

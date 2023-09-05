@@ -8,8 +8,9 @@ import {
   login,
   forgottenPassword,
   newPassword,
-  logout,
+  getUser,
 } from '../controllers/authControllers';
+import isAuth from '../middleware/isAuth';
 
 const router = Router();
 // Post routes
@@ -54,7 +55,7 @@ router.put(
   register
 );
 
-router.put('/set-avatar/:userId', setAvatar);
+router.put('/set-avatar/:userId', isAuth, setAvatar);
 
 router.post(
   '/login',
@@ -76,7 +77,6 @@ router.post('/forgottenpassword', forgottenPassword);
 
 router.post('/new-password', newPassword);
 
-// Get routes
-router.get('/logout', logout);
+router.get('/get-user/:userId', isAuth, getUser);
 
 export default router;

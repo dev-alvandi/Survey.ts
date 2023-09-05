@@ -12,13 +12,16 @@ import ForgottenPassword from './pages/ForgottenPassword';
 import useAuth from './hooks/useAuth';
 import Avatar from './pages/Avatar';
 import CompletePost from './components/CompletePost';
+import NotFound from './pages/NotFound';
 
 function App() {
-  const { user, logoutHandler, isAuth } = useAuth();
+  const { logoutHandler, isAuth } = useAuth();
+
+  // console.log(user.avatar);
 
   return (
     <Fragment>
-      <Navbar user={user} isAuth={isAuth} logoutHandler={logoutHandler} />
+      <Navbar logoutHandler={logoutHandler} />
       <Routes>
         <Route
           path="/register"
@@ -29,7 +32,7 @@ function App() {
           element={!isAuth ? <Avatar /> : <Navigate to="/" />} //! incorrectly protected!
         />
         <Route
-          path="/edit-avatar"
+          path="/edit-avatar/"
           element={isAuth ? <Avatar /> : <Navigate to="/" />} //! incorrectly protected!
         />
         <Route
@@ -60,6 +63,7 @@ function App() {
         )} */}
         <Route path="/" element={<Home />} />
         <Route path="/post/:postId" element={<CompletePost />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Fragment>
   );

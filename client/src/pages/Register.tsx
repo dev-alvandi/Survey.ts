@@ -1,12 +1,13 @@
-import { ChangeEvent, FormEvent, useReducer, useState } from 'react';
+import { ChangeEvent, FormEvent, Fragment, useReducer, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { ToastContainer, toast } from 'react-toastify';
 
 import Input from '../components/Input';
 import Button from '../components/Button';
 import { BASE_API_URL } from '../utils/api';
-import ServerMessage from '../components/ServerMessage';
+import toastOptions from '../utils/toastOptions';
 
 enum ACTION {
   NAME = 'name',
@@ -50,7 +51,6 @@ const Register = () => {
     password: '',
     confirmPassword: '',
   });
-  const [serverMessage, setServerMessage] = useState<serverMessageProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const formSubmitHandler = (e: FormEvent) => {
@@ -61,7 +61,7 @@ const Register = () => {
       .then((res) => {
         if (res.status === 200 || res.status === 201) {
           console.log(res.data);
-          setServerMessage([{ text: res.data.msg, type: 'success' }]);
+          toast.success(res.data.msg, toastOptions);
           // setTimeout(() => {
           setIsLoading(true);
           navigate('/avatar', {
@@ -77,9 +77,8 @@ const Register = () => {
         const errArray: serverMessageProps[] = [];
         if (response.data.data) {
           response.data.data.forEach((errMsg: string) => {
-            errArray.push({ text: errMsg, type: 'error' });
+            toast.error(errMsg, toastOptions);
           });
-          setServerMessage(errArray);
         }
       });
   };
@@ -89,48 +88,50 @@ const Register = () => {
   };
 
   return (
-    <Container className="pageContainer">
-      <form onSubmit={formSubmitHandler} className="inputBody">
-        <ServerMessage messageArray={serverMessage} />
-        <Input
-          id="name"
-          label="Name"
-          type="text"
-          value={state.name}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            inputChangeHandler(ACTION.NAME, e.target.value)
-          }
-        />
-        <Input
-          id="email"
-          label="Email"
-          type="email"
-          value={state.email}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            inputChangeHandler(ACTION.EMAIL, e.target.value)
-          }
-        />
-        <Input
-          id="pass"
-          label="Password"
-          type="password"
-          value={state.password}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            inputChangeHandler(ACTION.PASSWORD, e.target.value)
-          }
-        />
-        <Input
-          id="rePass"
-          label="Confirm Password"
-          type="password"
-          value={state.confirmPassword}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            inputChangeHandler(ACTION.CONFIRM_PASSWORD, e.target.value)
-          }
-        />
-        <Button isLoading={isLoading}>Sign up</Button>
-      </form>
-    </Container>
+    <Fragment>
+      <ToastContainer />
+      <Container className="pageContainer">
+        <form onSubmit={formSubmitHandler} className="inputBody">
+          <Input
+            id="name"
+            label="Name"
+            type="text"
+            value={state.name}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              inputChangeHandler(ACTION.NAME, e.target.value)
+            }
+          />
+          <Input
+            id="email"
+            label="Email"
+            type="email"
+            value={state.email}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              inputChangeHandler(ACTION.EMAIL, e.target.value)
+            }
+          />
+          <Input
+            id="pass"
+            label="Password"
+            type="password"
+            value={state.password}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              inputChangeHandler(ACTION.PASSWORD, e.target.value)
+            }
+          />
+          <Input
+            id="rePass"
+            label="Confirm Password"
+            type="password"
+            value={state.confirmPassword}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              inputChangeHandler(ACTION.CONFIRM_PASSWORD, e.target.value)
+            }
+          />
+          <Button isLoading={isLoading}>Sign up</Button>
+        </form>
+      </Container>
+    </Fragment>
   );
 };
 

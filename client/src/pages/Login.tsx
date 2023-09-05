@@ -1,6 +1,7 @@
 import {
   ChangeEvent,
   FormEvent,
+  Fragment,
   useCallback,
   useReducer,
   useState,
@@ -8,13 +9,14 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
+import { ToastContainer, toast } from 'react-toastify';
 
 import Input from '../components/Input';
 import Button from '../components/Button';
 import { BASE_API_URL } from '../utils/api';
 import { useAppDispatch } from '../store/store';
 import { login } from '../store/userSlice';
-import ServerMessage from '../components/ServerMessage';
+import toastOptions from '../utils/toastOptions';
 
 enum ACTION {
   EMAIL = 'email',
@@ -25,11 +27,6 @@ type ActionType = {
   type: ACTION;
   payload: string;
 };
-
-interface serverMessageProps {
-  text: string;
-  type: 'error' | 'success' | 'info';
-}
 
 const reducer = (state: any, action: ActionType) => {
   switch (action.type) {
@@ -49,7 +46,6 @@ const Login = () => {
     email: '',
     password: '',
   });
-  const [serverMessage, setServerMessage] = useState<serverMessageProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const formSubmitHandler = (e: FormEvent) => {
@@ -59,7 +55,7 @@ const Login = () => {
       .post(`${BASE_API_URL}/auth/login`, { ...state })
       .then((res) => {
         if (res.status === 200 || res.status === 201) {
-          setServerMessage([{ text: res.data.msg, type: 'success' }]);
+          toast.success(res.data.msg, toastOptions);
           setIsLoading(true);
           const { user, token } = res.data;
           localStorage.setItem('token', token);
@@ -75,12 +71,10 @@ const Login = () => {
       })
       .catch(({ response }) => {
         setIsLoading(false);
-        const errArray: serverMessageProps[] = [];
         if (response.data.data) {
           response.data.data.forEach((errMsg: string) => {
-            errArray.push({ text: errMsg, type: 'error' });
+            toast.error(errMsg, toastOptions);
           });
-          setServerMessage(errArray);
         }
       });
   };
@@ -89,33 +83,35 @@ const Login = () => {
     dispatch({ type, payload });
   }, []);
   return (
-    <Container className="pageContainer">
-      <form onSubmit={formSubmitHandler} className="inputBody">
-        <ServerMessage messageArray={serverMessage} />
-        <Input
-          id="email"
-          label="Email"
-          type="email"
-          value={state.email}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            inputChangeHandler(ACTION.EMAIL, e.target.value)
-          }
-        />
-        <Input
-          id="pass"
-          label="Password"
-          type="password"
-          value={state.password}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            inputChangeHandler(ACTION.PASSWORD, e.target.value)
-          }
-        />
-        <div className="button-container">
-          <Button isLoading={isLoading}>Login</Button>
-          <Link to="/login/forgottenpassword">Forgot Password?</Link>
-        </div>
-      </form>
-    </Container>
+    <Fragment>
+      <ToastContainer />
+      <Container className="pageContainer">
+        <form onSubmit={formSubmitHandler} className="inputBody">
+          <Input
+            id="email"
+            label="Email"
+            type="email"
+            value={state.email}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              inputChangeHandler(ACTION.EMAIL, e.target.value)
+            }
+          />
+          <Input
+            id="pass"
+            label="Password"
+            type="password"
+            value={state.password}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              inputChangeHandler(ACTION.PASSWORD, e.target.value)
+            }
+          />
+          <div className="button-container">
+            <Button isLoading={isLoading}>Login</Button>
+            <Link to="/login/forgottenpassword">Forgot Password?</Link>
+          </div>
+        </form>
+      </Container>
+    </Fragment>
   );
 };
 

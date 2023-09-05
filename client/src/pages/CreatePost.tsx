@@ -1,8 +1,9 @@
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, Fragment, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../store/store';
 import { useDispatch } from 'react-redux';
+import { ToastContainer, toast } from 'react-toastify';
 
 import Input from '../components/Input';
 import Textarea from '../components/Textarea';
@@ -10,19 +11,14 @@ import Button from '../components/Button';
 import ImageUploader from '../components/ImageUploader';
 import { BASE_API_IMAGE_url, BASE_API_URL } from '../utils/api';
 import axios from 'axios';
-import ServerMessage from '../components/ServerMessage';
 import SingleFileUploader from '../components/SingleFileUploader';
 import { editPost, resetPostValue } from '../store/postSlice';
+import toastOptions from '../utils/toastOptions';
 
 interface ValueStateTypes {
   image: any;
   title: string;
   caption: string;
-}
-
-interface serverMessageProps {
-  text: string;
-  type: 'error' | 'success' | 'info';
 }
 
 export default function CreatePost() {
@@ -32,6 +28,7 @@ export default function CreatePost() {
   const location = useLocation();
 
   const isEditing = useAppSelector((state) => state.editPost.isEditing);
+
   const post = useAppSelector((state) => state.editPost.post);
 
   const [values, setValues] = useState<ValueStateTypes>({
@@ -40,7 +37,6 @@ export default function CreatePost() {
     caption: '',
   });
   const [imageUrl, setImageUrl] = useState('');
-  const [serverMessage, setServerMessage] = useState<serverMessageProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -54,14 +50,14 @@ export default function CreatePost() {
 
       setImageUrl(`${BASE_API_IMAGE_url}/${post.imageUrl}`);
     }
-  }, []);
+  }, [isEditing, post.caption, post.imageUrl, post.title]);
 
   //* Cleanup after leaving the page!
   useEffect(() => {
-    if (location.pathname !== '/create-post') {
+    if (location.pathname === '/create-post') {
       dispatch(editPost({ isEditing: false, post: { ...resetPostValue } }));
     }
-  }, [location]);
+  }, [dispatch, location.pathname]);
 
   const onChangeUploadHandler = (e: any) => {
     const imageFile = e.target.files[0];
@@ -129,7 +125,7 @@ export default function CreatePost() {
     })
       .then((res) => {
         if (res.status === 201 || res.status === 200) {
-          setServerMessage([{ text: res.data.msg, type: 'success' }]);
+          toast.success(res.data.msg, toastOptions);
           if (isEditing) {
             dispatch(
               editPost({ isEditing: false, post: { ...resetPostValue } })
@@ -142,59 +138,62 @@ export default function CreatePost() {
       .catch(({ response }) => {
         // .catch(({ response }) => {
         setIsLoading(false);
-        const errArray: serverMessageProps[] = [];
         if (response.data.data) {
           response.data.data.forEach((errMsg: string) => {
-            errArray.push({ text: errMsg, type: 'error' });
+            toast.error(errMsg, toastOptions);
           });
-          setServerMessage(errArray);
         }
       });
   };
 
   return (
-    <Container className="pageContainer">
-      <form onSubmit={formSubmitHanlder}>
-        <ServerMessage messageArray={serverMessage} />
-        {!imageUrl ? (
-          <SingleFileUploader
-            onChangeUploadHandler={onChangeUploadHandler}
-            onDropUploadHandler={onDropUploadHandler}
-            removeUploadedImgHandler={removeUploadedImgHandler}
+    <Fragment>
+      <ToastContainer />
+      <Container className="pageContainer">
+        <form onSubmit={formSubmitHanlder}>
+          {!imageUrl ? (
+            <SingleFileUploader
+              onChangeUploadHandler={onChangeUploadHandler}
+              onDropUploadHandler={onDropUploadHandler}
+              removeUploadedImgHandler={removeUploadedImgHandler}
+            />
+          ) : (
+            <ImageUploader
+              image={{
+                url: imageUrl,
+                name: 'This',
+              }}
+              removeUploadedImgHandler={removeUploadedImgHandler}
+            />
+          )}
+          <Input
+            id="title"
+            label="Title"
+            value={values.title}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setValues((prevState) => ({
+                ...prevState,
+                title: e.target.value,
+              }))
+            }
           />
-        ) : (
-          <ImageUploader
-            image={{
-              url: imageUrl,
-              name: 'This',
-            }}
-            removeUploadedImgHandler={removeUploadedImgHandler}
+          <Textarea
+            id="text"
+            label="Caption"
+            value={values.caption}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+              setValues((prevState) => ({
+                ...prevState,
+                caption: e.target.value,
+              }))
+            }
           />
-        )}
-        <Input
-          id="title"
-          label="Title"
-          value={values.title}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            setValues((prevState) => ({ ...prevState, title: e.target.value }))
-          }
-        />
-        <Textarea
-          id="text"
-          label="Caption"
-          value={values.caption}
-          onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-            setValues((prevState) => ({
-              ...prevState,
-              caption: e.target.value,
-            }))
-          }
-        />
-        <Button type="submit" isLoading={isLoading}>
-          {isEditing ? 'Edit Post' : 'Post Now!'}
-        </Button>
-      </form>
-    </Container>
+          <Button type="submit" isLoading={isLoading}>
+            {isEditing ? 'Edit Post' : 'Post Now!'}
+          </Button>
+        </form>
+      </Container>
+    </Fragment>
   );
 }
 

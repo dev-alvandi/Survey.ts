@@ -1,10 +1,12 @@
-import { FC, useState } from 'react';
+import { FC, Fragment, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { PostSchemaTypes, editPost } from '../store/postSlice';
 import axios from 'axios';
 import { BASE_API_URL } from '../utils/api';
 import styled from 'styled-components';
+import OverlayModal from '../components/OverlayModal';
 
 interface PropTypes {
   post: PostSchemaTypes;
@@ -45,24 +47,30 @@ const PostDeleteUpdate: FC<PropTypes> = ({ handleDeletedItem, post }) => {
       });
   };
 
-  const handleDisplayingSettings = () => {
+  const handleModalDisplay = () => {
     setIsDisplayShowSetting((prevState) => !prevState);
   };
 
   return (
-    <Container onClick={handleDisplayingSettings}>
-      <div className="setting-dots" />
+    <Fragment>
       {isDisplaySetting && (
-        <div className="post-settings__items">
-          <div className="edit" onClick={editHandler}>
-            Edit
-          </div>
-          <div className="delete" onClick={deleteHandler}>
-            Delete
-          </div>
-        </div>
+        <Fragment>
+          {ReactDOM.createPortal(
+            <OverlayModal
+              editHandler={editHandler}
+              deleteHandler={deleteHandler}
+              isShown={isDisplaySetting}
+              handleModalDisplay={handleModalDisplay}
+            />,
+            document.getElementById('overlay-root')!
+          )}
+        </Fragment>
       )}
-    </Container>
+
+      <Container onClick={handleModalDisplay}>
+        <div className="setting-dots" />
+      </Container>
+    </Fragment>
   );
 };
 
