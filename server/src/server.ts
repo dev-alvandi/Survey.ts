@@ -16,7 +16,6 @@ import Socket from './socket';
 require('dotenv').config({ path: `${__dirname}/../.env` });
 const MONGO_URL: string = process.env.MONGO_URL as string;
 const PORT: string = process.env.PORT as string;
-const NODE_ENV: string = process.env.NODE_ENV as string;
 const FRONTEND_URL: string = process.env.FRONTEND_URL as string;
 
 // Basic establishments
@@ -83,7 +82,7 @@ type ErrorType = {
   data: [];
 };
 app.use((error: ErrorType, req: Request, res: Response, next: NextFunction) => {
-  NODE_ENV === 'development' && console.log(error);
+  console.log(error);
   const status = error.statusCode || 500;
   const { message, data } = error;
   res.status(status).json({ msg: message, data: data });

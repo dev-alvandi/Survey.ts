@@ -107,7 +107,7 @@ const Login = () => {
           />
           <div className="button-container">
             <Button isLoading={isLoading}>Login</Button>
-            <Link to="/login/forgottenpassword">Forgot Password?</Link>
+            {/* <Link to="/login/forgottenpassword">Forgot Password?</Link> */}
           </div>
         </form>
       </Container>

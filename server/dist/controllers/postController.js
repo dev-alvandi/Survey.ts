@@ -43,7 +43,6 @@ const getPosts = (req, res, next) => {
                 isUser: false,
             });
         }
-        console.log(userId, req.userId);
         return userModel_1.default.findById(req.userId).populate({
             path: 'myPosts',
             populate: { path: 'creator' },
@@ -100,7 +99,6 @@ const getMyPosts = (req, res, next) => {
         if (!userId) {
             throw (0, customError_1.default)('User id not found', 422);
         }
-        // console.log(userId, req.userId);
         return userModel_1.default.findById(req.userId).populate({
             path: 'myPosts',
             populate: { path: 'creator' },
@@ -234,20 +232,17 @@ const likePost = (req, res, next) => {
         }
         const hasAlreadyLikedIndex = loadedPost.likes.findIndex((userIdWhoLikedPost) => userIdWhoLikedPost === userId);
         if (isLiked && hasAlreadyLikedIndex === -1) {
-            // console.log('Liked');
             yield userModel_1.default.findByIdAndUpdate(userId, { $push: { likedPosts: postId } });
             return postModel_1.default.findByIdAndUpdate(postId, { $push: { likes: userId } }, { new: true });
         }
         else if (!isLiked && hasAlreadyLikedIndex > -1) {
-            // console.log('Unliked');
             yield userModel_1.default.findByIdAndUpdate(userId, { $pull: { likedPosts: postId } });
             return postModel_1.default.findByIdAndUpdate(postId, { $pull: { likes: userId } }, { new: true });
         }
     }))
         .then((updatedPost) => {
         if (!updatedPost) {
-            console.log(updatedPost);
-            return;
+            throw (0, customError_1.default)('Post cannot get updated at the moment!', 422);
         }
         res.status(201).json({
             msg: `Post is ${isLiked ? 'liked' : 'unliked'} successfully.`,
@@ -271,8 +266,8 @@ const editPost = (req, res, next) => {
     const { postId } = req.params;
     const { title, caption } = req.body;
     let imageUrl = req.body.image;
-    if (req.file) {
-        imageUrl = req.file.path;
+    if (req.files) {
+        imageUrl = req.files.image[0].path;
     }
     if (!imageUrl) {
         throw (0, customError_1.default)('No image has been picked!', 422);
@@ -287,11 +282,12 @@ const editPost = (req, res, next) => {
         }
         if (imageUrl !== post.imageUrl) {
             (0, clearImageHandler_1.clearImage)(post.imageUrl);
+            const splittedImageUrl = imageUrl.split('/');
+            post.imageUrl =
+                'images/' + splittedImageUrl[splittedImageUrl.length - 1];
         }
-        const splittedImageUrl = imageUrl.split('/');
         post.title = title;
         post.caption = caption;
-        post.imageUrl = 'images/' + splittedImageUrl[splittedImageUrl.length - 1];
         return post.save();
     })
         .then((result) => {
@@ -336,7 +332,6 @@ const deletePost = (req, res, next) => {
         return user.save();
     })
         .then((result) => {
-        // console.log(result);
         res.status(200).json({ msg: 'Post deleted successfully!' });
     })
         .catch((err) => {

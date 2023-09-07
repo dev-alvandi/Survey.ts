@@ -17,7 +17,6 @@ const socket_1 = __importDefault(require("./socket"));
 require('dotenv').config({ path: `${__dirname}/../.env` });
 const MONGO_URL = process.env.MONGO_URL;
 const PORT = process.env.PORT;
-const NODE_ENV = process.env.NODE_ENV;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 // Basic establishments
 const app = (0, express_1.default)();
@@ -57,7 +56,7 @@ app.use('/api/auth', authRoutes_1.default);
 app.use('/api/feed', postRoutes_1.default);
 app.use('/api/feed', commentRoutes_1.default);
 app.use((error, req, res, next) => {
-    NODE_ENV === 'development' && console.log(error);
+    console.log(error);
     const status = error.statusCode || 500;
     const { message, data } = error;
     res.status(status).json({ msg: message, data: data });

@@ -49,6 +49,13 @@ export default function CreatePost() {
       }));
 
       setImageUrl(`${BASE_API_IMAGE_url}/${post.imageUrl}`);
+    } else {
+      setImageUrl('');
+      setValues({
+        image: {},
+        title: '',
+        caption: '',
+      });
     }
   }, [isEditing, post.caption, post.imageUrl, post.title]);
 
@@ -96,12 +103,12 @@ export default function CreatePost() {
     formData.append('image', values.image);
     formData.append('creatorId', creatorId);
 
-    let fetchingconfig = {
-      method: 'POST',
-      url: `${BASE_API_URL}/feed/create-post`,
+    let fetchingconfig: {
+      method: string;
+      url: string;
       headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('token'),
-      },
+        Authorization: string;
+      };
     };
 
     if (isEditing) {
@@ -115,7 +122,17 @@ export default function CreatePost() {
       if (!values.image) {
         formData.append('image', imageUrl);
       }
+    } else {
+      fetchingconfig = {
+        method: 'POST',
+        url: `${BASE_API_URL}/feed/create-post`,
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token'),
+        },
+      };
     }
+
+    console.log(values);
 
     axios({
       method: fetchingconfig.method,
@@ -200,5 +217,11 @@ export default function CreatePost() {
 const Container = styled.div`
   form {
     width: 50%;
+  }
+
+  @media (max-width: 768px) {
+    form {
+      width: 100%;
+    }
   }
 `;

@@ -6,7 +6,7 @@ import { BASE_API_URL } from '../utils/api';
 import PreviewPosts from './PreviewPosts';
 import { PostSchemaTypes } from '../store/postSlice';
 import LoadingPreviwPosts from './LoadingPreviwPosts';
-import Loader from './Loader';
+// import Loader from './Loader';
 
 interface ShowPostsPropTypes {
   typeOfPosts: 'MyPosts' | 'AllPosts';
@@ -14,9 +14,10 @@ interface ShowPostsPropTypes {
 
 const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
   const [posts, setPosts] = useState<PostSchemaTypes[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [endOfPosts, setEndOfPosts] = useState(false);
+  const [isPostFound, setIsPostFound] = useState(true);
 
   useEffect(() => {
     if (!endOfPosts) {
@@ -34,7 +35,7 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
           Math.floor(scrollHeight - currentHeight) === 0 &&
           posts.length > 0
         ) {
-          setIsLoading(true);
+          // setIsLoading(true);
           setPage(page + 1);
         }
       };
@@ -46,10 +47,10 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
-    const controller = new AbortController();
-    const signal = controller.signal;
+    // const controller = new AbortController();
+    // const signal = controller.signal;
     const config = {
-      signal: signal,
+      // signal: signal,
       headers: {
         Authorization: 'Bearer ' + localStorage.getItem('token'),
       },
@@ -67,25 +68,25 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
       .get(fetchingUrl, config)
       .then((res) => {
         if (res.status === 200 || res.status === 201) {
-          setPosts((prevPosts) => [...prevPosts, ...res.data.posts]);
-          setIsLoading(false);
           if (res.data.posts.length === 0) {
             setEndOfPosts(true);
+            return setIsPostFound(false);
           }
-          return;
+          // setIsLoading(false);
+          setPosts((prevPosts) => [...prevPosts, ...res.data.posts]);
+          setIsPostFound(true);
         }
       })
       .then(() => {})
       .catch((err) => {
         console.log(err);
         if (err.code !== 'ERR_CANCELED') {
-          setIsLoading(false);
-          console.log(err);
+          // setIsLoading(false);
         }
       });
-    return () => {
-      controller.abort();
-    };
+    // return () => {
+    //   controller.abort();
+    // };
   }, [page, typeOfPosts]);
 
   const handleDeletedItem = (postId: string) => {
@@ -102,13 +103,15 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
           handleDeletedItem={handleDeletedItem}
         />
       ))}
-      {posts.length === 0 ? (
+      {posts.length === 0 && isPostFound ? (
         <Fragment>
           <LoadingPreviwPosts />
         </Fragment>
       ) : (
         ''
       )}
+
+      {!isPostFound ? <div>You have no post yet!</div> : ''}
       {/* {!endOfPosts && <Loader isLoading={isLoading} />} */}
     </Container>
   );

@@ -1,4 +1,4 @@
-import { FC, Fragment, useEffect, useState } from 'react';
+import { FC, Fragment, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AiOutlineLogin } from 'react-icons/ai';
 import styled from 'styled-components';
@@ -27,7 +27,10 @@ const Navbar: FC<NavbarPropTypes> = ({ logoutHandler }) => {
         <div
           className="mobile-nav"
           onClick={() => setIsMenuShown((prevState) => !prevState)}>
-          <div className="hamburger"></div>
+          <div className={`hamburger ${isMenuShown ? 'clicked' : ''}`}>
+            <span className="line top-line"></span>
+            <span className="line bottom-line"></span>
+          </div>
           {isMenuShown && (
             <div className="menu-container">
               <span className="link">
@@ -73,17 +76,17 @@ const Navbar: FC<NavbarPropTypes> = ({ logoutHandler }) => {
               className="auth-icon"
               onClick={() => setIsAuthShown((prevState) => !prevState)}>
               <AiOutlineLogin />
+              {isAuthShown && (
+                <div className="authentication">
+                  <span className="link">
+                    <Link to="register">Register</Link>
+                  </span>
+                  <span className="link">
+                    <Link to="login">Login</Link>
+                  </span>
+                </div>
+              )}
             </div>
-            {isAuthShown && (
-              <div className="authentication">
-                <span className="link">
-                  <Link to="register">Register</Link>
-                </span>
-                <span className="link">
-                  <Link to="login">Login</Link>
-                </span>
-              </div>
-            )}
 
             <div className="authentication desktop">
               <span className="link">
@@ -158,27 +161,30 @@ const Container = styled.nav`
       padding: 0 1rem;
       cursor: pointer;
       .clicked {
-      }
-      .hamburger {
-        width: 1rem;
-        height: 0.1rem;
-        background-color: #fff;
-        position: relative;
-
-        &::after,
-        &::before {
-          content: '';
-          display: block;
-          width: 100%;
-          height: 100%;
-          position: absolute;
-          top: -0.5rem;
-          left: 0;
-          background-color: #fff;
+        .top-line {
+          transform: translate(-50%, -50%) rotate(-45deg) !important;
         }
 
-        &::after {
-          top: 0.5rem;
+        .bottom-line {
+          transform: translate(-50%, -50%) rotate(45deg) !important;
+        }
+      }
+      .hamburger {
+        padding: 1.5rem 1rem;
+        position: relative;
+
+        .line {
+          transition: 0.2s;
+          width: 1rem;
+          height: 0.1rem;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, calc(-50% - 0.3rem));
+          background-color: #fff;
+        }
+        .bottom-line {
+          transform: translate(-50%, calc(-50% + 0.3rem));
         }
       }
     }
@@ -197,7 +203,7 @@ const Container = styled.nav`
       cursor: pointer;
       color: #e5e5e5;
       transition: color 0.15s ease-in-out;
-      padding: 0.2rem 0;
+      padding: 0.2rem 0.2rem;
       &:hover {
         color: #fff;
       }
@@ -249,10 +255,10 @@ const Container = styled.nav`
     padding: 0 2rem;
   }
   @media (max-width: 768px) {
+    padding: 0;
     .desktop {
       display: none !important;
     }
-    padding: 0 1rem;
     .logo-container {
       position: absolute;
       top: 50%;
@@ -277,8 +283,7 @@ const Container = styled.nav`
           position: absolute;
           flex-direction: column;
           top: 100%;
-          left: -1rem;
-          /* gap: 0.5rem; */
+          left: 0.5rem;
           padding: 0.7rem 1rem;
           background-color: var(--light-purple);
           white-space: nowrap;
@@ -287,12 +292,16 @@ const Container = styled.nav`
       .user {
         display: block;
         width: 100%;
+        img {
+          margin-right: 1rem;
+        }
         .username {
           display: none;
         }
         .user-link__container {
           width: 150%;
           /* gap: 0.5rem; */
+          right: 0.5rem;
         }
       }
     }
@@ -308,13 +317,13 @@ const Container = styled.nav`
       .authentication {
         position: absolute;
         top: 100%;
-        right: 0;
+        right: 0.5rem;
         display: flex;
         flex-direction: column;
         align-items: center;
         padding: 0.7rem 1rem;
-
         background-color: var(--light-purple);
+        font-size: 1rem;
       }
     }
   }
