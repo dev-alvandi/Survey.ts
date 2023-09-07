@@ -9,6 +9,10 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const path_1 = __importDefault(require("path"));
 const multer_1 = __importDefault(require("multer"));
 const mongoose_1 = __importDefault(require("mongoose"));
+const helmet_1 = __importDefault(require("helmet"));
+const compression_1 = __importDefault(require("compression"));
+const morgan_1 = __importDefault(require("morgan"));
+const fs_1 = require("fs");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const postRoutes_1 = __importDefault(require("./routes/postRoutes"));
 const commentRoutes_1 = __importDefault(require("./routes/commentRoutes"));
@@ -55,6 +59,12 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes_1.default);
 app.use('/api/feed', postRoutes_1.default);
 app.use('/api/feed', commentRoutes_1.default);
+const accessLogStream = (0, fs_1.createWriteStream)(path_1.default.join(__dirname, 'access.log'), {
+    flags: 'a',
+});
+app.use((0, helmet_1.default)());
+app.use((0, compression_1.default)());
+app.use((0, morgan_1.default)('combined', { stream: accessLogStream }));
 app.use((error, req, res, next) => {
     console.log(error);
     const status = error.statusCode || 500;

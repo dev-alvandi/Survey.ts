@@ -4,6 +4,11 @@ import bodyParser from 'body-parser';
 import path from 'path';
 import multer, { FileFilterCallback } from 'multer';
 import mongoose, { ConnectOptions } from 'mongoose';
+import helmet from 'helmet';
+import compression from 'compression';
+import morgan from 'morgan';
+import { createWriteStream, readFileSync } from 'fs';
+import { Http2ServerRequest } from 'http2';
 
 // custom imports
 import User from './models/userModel';
@@ -74,6 +79,14 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/feed', postRoutes);
 app.use('/api/feed', commentRoutes);
+
+const accessLogStream = createWriteStream(path.join(__dirname, 'access.log'), {
+  flags: 'a',
+});
+
+app.use(helmet());
+app.use(compression());
+app.use(morgan('combined', { stream: accessLogStream }));
 
 // Error handling middleware
 type ErrorType = {
