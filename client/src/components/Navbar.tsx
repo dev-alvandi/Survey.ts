@@ -1,5 +1,6 @@
-import { FC, Fragment, useEffect } from 'react';
+import { FC, Fragment, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { AiOutlineLogin } from 'react-icons/ai';
 import styled from 'styled-components';
 
 import logo from '../assets/logo.png';
@@ -11,57 +12,112 @@ interface NavbarPropTypes {
 }
 
 const Navbar: FC<NavbarPropTypes> = ({ logoutHandler }) => {
+  const navigate = useNavigate();
+
   const user = useAppSelector((state) => state.user.user);
   const isAuth = useAppSelector((state) => state.user.isAuth);
 
-  const navigate = useNavigate();
+  const [isMenuShown, setIsMenuShown] = useState(false);
+  const [isAuthShown, setIsAuthShown] = useState(false);
+  const [isUserLinkShown, setIsUserLinkShown] = useState(false);
+
   return (
     <Container>
       <div className="linkContainer leftSide">
+        <div
+          className="mobile-nav"
+          onClick={() => setIsMenuShown((prevState) => !prevState)}>
+          <div className="hamburger"></div>
+          {isMenuShown && (
+            <div className="menu-container">
+              <span className="link">
+                <Link to="/">Home</Link>
+              </span>
+              {isAuth && (
+                <Fragment>
+                  <span className="link">
+                    <Link to="/create-post">Create a Post</Link>
+                  </span>
+                  <span className="link">
+                    <Link to="/myposts">My Posts</Link>
+                  </span>
+                </Fragment>
+              )}
+            </div>
+          )}
+        </div>
         <div className="logo-container" onClick={() => navigate('/')}>
           <img src={logo} alt="Logo" />
         </div>
-        <span className="link">
-          <Link to="/">Home</Link>
-        </span>
-        {isAuth && (
-          <Fragment>
-            <span className="link">
-              <Link to="/create-post">Create a Post</Link>
-            </span>
-            <span className="link">
-              <Link to="/myposts">My Posts</Link>
-            </span>
-            <span className="link">
-              <Link to="/edit-avatar">Edit avatar</Link>
-            </span>
-          </Fragment>
-        )}
+        <div className="desktop-nav">
+          <span className="link">
+            <Link to="/">Home</Link>
+          </span>
+          {isAuth && (
+            <Fragment>
+              <span className="link">
+                <Link to="/create-post">Create a Post</Link>
+              </span>
+              <span className="link">
+                <Link to="/myposts">My Posts</Link>
+              </span>
+            </Fragment>
+          )}
+        </div>
       </div>
 
       <div className="linkContainer RightSide">
         {!isAuth ? (
           <Fragment>
-            <span className="link">
-              <Link to="register">Register</Link>
-            </span>
-            <span className="link">
-              <Link to="login">Login</Link>
-            </span>
+            <div
+              className="auth-icon"
+              onClick={() => setIsAuthShown((prevState) => !prevState)}>
+              <AiOutlineLogin />
+            </div>
+            {isAuthShown && (
+              <div className="authentication">
+                <span className="link">
+                  <Link to="register">Register</Link>
+                </span>
+                <span className="link">
+                  <Link to="login">Login</Link>
+                </span>
+              </div>
+            )}
+
+            <div className="authentication desktop">
+              <span className="link">
+                <Link to="register">Register</Link>
+              </span>
+              <span className="link">
+                <Link to="login">Login</Link>
+              </span>
+            </div>
           </Fragment>
         ) : (
           <Fragment>
-            <span className="link" onClick={logoutHandler}>
-              Logout
-            </span>
             {isAuth && user && (
-              <span className="link user">
-                <img
-                  src={`${BASE_API_IMAGE_url}/${user.avatar}`}
-                  alt={user.name}
-                />
-                <span>{user.name}</span>
-              </span>
+              <Fragment>
+                <div
+                  className="link user"
+                  onClick={() => setIsUserLinkShown((prevState) => !prevState)}>
+                  <img
+                    src={`${BASE_API_IMAGE_url}/${user.avatar}`}
+                    alt={user.name}
+                  />
+                  <span className="username">{user.name}</span>
+                  {isUserLinkShown && (
+                    <div className="user-link__container">
+                      <span className="link">
+                        <Link to="/edit-avatar">Edit avatar</Link>
+                      </span>
+                      <span className="link" onClick={logoutHandler}>
+                        Logout
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </Fragment>
             )}
           </Fragment>
         )}
@@ -85,7 +141,6 @@ const Container = styled.nav`
   align-items: center;
   .logo-container {
     height: var(--nav-height);
-    width: var(--nav-height);
     display: flex;
     padding: 0.2rem;
     justify-content: center;
@@ -93,18 +148,56 @@ const Container = styled.nav`
     cursor: pointer;
     img {
       height: 100%;
+      object-fit: cover;
     }
   }
   .linkContainer {
     display: flex;
-    gap: 2rem;
+    .mobile-nav {
+      display: none;
+      padding: 0 1rem;
+      cursor: pointer;
+      .clicked {
+      }
+      .hamburger {
+        width: 1rem;
+        height: 0.1rem;
+        background-color: #fff;
+        position: relative;
+
+        &::after,
+        &::before {
+          content: '';
+          display: block;
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          top: -0.5rem;
+          left: 0;
+          background-color: #fff;
+        }
+
+        &::after {
+          top: 0.5rem;
+        }
+      }
+    }
+    .desktop-nav {
+      display: flex;
+      gap: 1.5rem;
+    }
     .link,
     a {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      white-space: nowrap;
       display: flex;
       align-items: center;
       cursor: pointer;
       color: #e5e5e5;
       transition: color 0.15s ease-in-out;
+      padding: 0.2rem 0;
       &:hover {
         color: #fff;
       }
@@ -112,19 +205,117 @@ const Container = styled.nav`
     .user {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      cursor: default;
+      /* gap: 0.5rem; */
+      position: relative;
+      padding: 0;
       img {
         padding: 0.5rem 0.5rem;
         height: var(--nav-height);
         width: var(--nav-height);
         object-fit: cover;
         border-radius: 50%;
-        cursor: default;
+      }
+
+      .user-link__container {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        white-space: nowrap;
+        /* gap: 0.5rem; */
+        padding: 0.7rem 1rem;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background-color: var(--light-purple);
       }
     }
   }
   .RightSide {
     justify-content: flex-end;
+    .auth-icon {
+      display: none;
+      width: 100%;
+    }
+    .authentication {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* gap: 1rem; */
+    }
+  }
+
+  @media (max-width: 1000px) {
+    padding: 0 2rem;
+  }
+  @media (max-width: 768px) {
+    .desktop {
+      display: none !important;
+    }
+    padding: 0 1rem;
+    .logo-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .linkContainer {
+      justify-content: space-between;
+      height: 100%;
+      .desktop-nav {
+        display: none;
+      }
+      .mobile-nav {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        height: 100%;
+        .menu-container {
+          display: flex;
+          position: absolute;
+          flex-direction: column;
+          top: 100%;
+          left: -1rem;
+          /* gap: 0.5rem; */
+          padding: 0.7rem 1rem;
+          background-color: var(--light-purple);
+          white-space: nowrap;
+        }
+      }
+      .user {
+        display: block;
+        width: 100%;
+        .username {
+          display: none;
+        }
+        .user-link__container {
+          width: 150%;
+          /* gap: 0.5rem; */
+        }
+      }
+    }
+    .RightSide {
+      .auth-icon {
+        display: flex;
+        align-items: center;
+        font-size: 1.3rem;
+        color: #fff;
+        padding: 0 1rem;
+        cursor: pointer;
+      }
+      .authentication {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.7rem 1rem;
+
+        background-color: var(--light-purple);
+      }
+    }
   }
 `;

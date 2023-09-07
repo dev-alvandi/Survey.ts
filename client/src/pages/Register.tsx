@@ -93,7 +93,7 @@ const Register = () => {
       <Container className="pageContainer">
         <form onSubmit={formSubmitHandler} className="inputBody">
           <Input
-            id="name"
+            id="name-register"
             label="Name"
             type="text"
             value={state.name}
@@ -102,7 +102,7 @@ const Register = () => {
             }
           />
           <Input
-            id="email"
+            id="email-register"
             label="Email"
             type="email"
             value={state.email}
@@ -111,7 +111,7 @@ const Register = () => {
             }
           />
           <Input
-            id="pass"
+            id="pass-register"
             label="Password"
             type="password"
             value={state.password}

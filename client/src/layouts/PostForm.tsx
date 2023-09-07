@@ -38,7 +38,7 @@ const PostForm: FC<PostFormPropType> = ({ commentHandler, isInputFocused }) => {
   return (
     <Container>
       <Textarea
-        id="comment"
+        id="comment-preview"
         value={commentvalue}
         rows={1}
         ref={inputRef}

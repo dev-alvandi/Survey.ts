@@ -53,7 +53,6 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
       headers: {
         Authorization: 'Bearer ' + localStorage.getItem('token'),
       },
-      // timeout: 1, //! Correct this!!!!!!!
     };
     let fetchingUrl: string = '';
     if (typeOfPosts === 'AllPosts') {
@@ -78,6 +77,7 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
       })
       .then(() => {})
       .catch((err) => {
+        console.log(err);
         if (err.code !== 'ERR_CANCELED') {
           setIsLoading(false);
           console.log(err);

@@ -88,7 +88,7 @@ const Login = () => {
       <Container className="pageContainer">
         <form onSubmit={formSubmitHandler} className="inputBody">
           <Input
-            id="email"
+            id="email-login"
             label="Email"
             type="email"
             value={state.email}
@@ -97,7 +97,7 @@ const Login = () => {
             }
           />
           <Input
-            id="pass"
+            id="pass-login"
             label="Password"
             type="password"
             value={state.password}
