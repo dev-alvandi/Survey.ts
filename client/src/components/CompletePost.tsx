@@ -5,7 +5,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/store';
 import axios from 'axios';
 import openSocket from 'socket.io-client';
-import { ToastContainer, toast } from 'react-toastify';
 
 import {
   BASE_API_IMAGE_url,
@@ -16,18 +15,22 @@ import PostHeader from '../layouts/PostHeader';
 import PostActions from '../layouts/PostActions';
 import PostForm from '../layouts/PostForm';
 import PostComment from '../layouts/PostComment';
-import { editCommentAction, isEditingHandler } from '../store/commentSlice';
-import toastOptions from '../utils/toastOptions';
-// import ServerMessage, { serverMessageProps } from './ServerMessage';
+import {
+  createComment,
+  editComment,
+  isEditingHandler,
+} from '../store/commentSlice';
 
 const CompletePost = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const params = useParams();
 
-  const [post, setPost] = useState<PostSchemaTypes>();
+  const fetchingStatus = useAppSelector(
+    (state) => state.comment.fetchingStatus
+  );
   const editing = useAppSelector((state) => state.comment.editing);
-  // const [serverMessage, setServerMessage] = useState<serverMessageProps[]>([]);
+  const [post, setPost] = useState<PostSchemaTypes>();
   const [isInputFocused, setIsInputFocused] = useState(false);
 
   useEffect(() => {
@@ -64,87 +67,69 @@ const CompletePost = () => {
 
   const commentHandler = (comment: string) => {
     const { postId } = params;
-    const config = {
-      headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('token'),
-      },
-    };
 
-    if (editing.status) {
-      // setMyComment(comment);
+    if (editing.status && editing.commentId) {
       return dispatch(
-        editCommentAction({
-          method: 'PUT',
-          url: `${BASE_API_URL}/feed/edit-comment/${editing.commentId}`,
-          comment: comment,
+        editComment({
+          newComment: comment,
+          oldCommentId: editing.commentId,
         })
       );
     }
-
-    axios
-      .post(
-        `${BASE_API_URL}/feed/new-comment/${postId}`,
-        { comment: comment },
-        config
-      )
-      .then((res) => {
-        if (res.status === 200) {
-          toast.success(res.data.msg, toastOptions);
-        }
-      })
-      .catch(({ response }) => {
-        if (response.status === 401) {
-          navigate('/login');
-        }
-      });
+    if (postId) {
+      dispatch(createComment({ comment: comment, postId: postId }));
+      if (fetchingStatus.status === 200) {
+      } else {
+        navigate('/login');
+      }
+    }
   };
 
   return (
-    <Fragment>
-      <Container className="pageContainer">
-        {post && (
-          <Fragment>
-            <div className="post-image">
-              <img src={`${BASE_API_IMAGE_url}/${post.imageUrl}`} alt="" />
-            </div>
-            <div className="post-details">
-              <div className="post-creator">
-                <div className="post-header">
-                  <PostHeader post={post} />
-                </div>
-                <div className="post-caption">{post.caption}</div>
+    <Container className="pageContainer">
+      {post && (
+        <Fragment>
+          <div className="post-image">
+            <img src={`${BASE_API_IMAGE_url}/${post.imageUrl}`} alt="" />
+          </div>
+          <div className="post-details">
+            <div className="post-creator">
+              <div className="post-header">
+                <PostHeader post={post} />
               </div>
-              <div className="comments-container">
-                {post.comments && post.comments.length > 0 ? (
-                  post.comments.map((comment: any) => (
+              <div className="post-caption">{post.caption}</div>
+            </div>
+            <div className="comments-container">
+              {post.comments && post.comments.length > 0 ? (
+                post.comments
+                  .reverse()
+                  .map((comment: any) => (
                     <PostComment key={comment._id} comment={comment} />
                   ))
-                ) : (
-                  <div className="no-comment">No Comments yet!</div>
-                )}
-              </div>
-              <div className="post-actions">
-                <PostActions
-                  post={post}
-                  focusingOnInputHandler={() =>
-                    setIsInputFocused((prevState) => !prevState)
-                  }
-                />
-              </div>
-              <div className="comment-form">
-                {params.postId && (
-                  <PostForm
-                    commentHandler={commentHandler}
-                    isInputFocused={isInputFocused}
-                  />
-                )}
-              </div>
+              ) : (
+                <div className="no-comment">No Comments yet!</div>
+              )}
             </div>
-          </Fragment>
-        )}
-      </Container>
-      <ToastContainer />
-    </Fragment>
+            <div className="post-actions">
+              <PostActions
+                post={post}
+                focusingOnInputHandler={() =>
+                  setIsInputFocused((prevState) => !prevState)
+                }
+              />
+            </div>
+            <div className="comment-form">
+              {params.postId && (
+                <PostForm
+                  commentHandler={commentHandler}
+                  isInputFocused={isInputFocused}
+                />
+              )}
+            </div>
+          </div>
+        </Fragment>
+      )}
+    </Container>
   );
 };
 

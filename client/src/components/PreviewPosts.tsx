@@ -1,15 +1,14 @@
-import { FC, Fragment, useState } from 'react';
+import { FC, memo, useCallback, useState } from 'react';
 import styled from 'styled-components';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify';
 
 import { PostSchemaTypes } from '../store/postSlice';
-import { BASE_API_IMAGE_url, BASE_API_URL } from '../utils/api';
+import { BASE_API_IMAGE_url } from '../utils/api';
 import PostHeader from '../layouts/PostHeader';
 import PostActions from '../layouts/PostActions';
 import PostForm from '../layouts/PostForm';
-import toastOptions from '../utils/toastOptions';
+import { useAppDispatch, useAppSelector } from '../store/store';
+import { createComment } from '../store/commentSlice';
 
 interface PreviewPostsPropTypes {
   post: PostSchemaTypes;
@@ -21,8 +20,11 @@ const PreviewPosts: FC<PreviewPostsPropTypes> = ({
   handleDeletedItem,
 }) => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
-  // const [commentvalue, setCommentvalue] = useState('');
+  const fetchingStatus = useAppSelector(
+    (state) => state.comment.fetchingStatus
+  );
   const [isShowMore, setIsShowMore] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
 
@@ -30,85 +32,71 @@ const PreviewPosts: FC<PreviewPostsPropTypes> = ({
     navigate(`/post/${post._id}`);
   };
 
-  const commentHandler = (comment: string) => {
-    const config = {
-      headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('token'),
-      },
-    };
-
-    axios
-      .post(
-        `${BASE_API_URL}/feed/new-comment/${post._id}`,
-        { comment: comment },
-        config
-      )
-      .then((res) => {
-        toast.success(res.data.msg, toastOptions);
-      })
-      .catch(({ response }) => {
-        if (response.status === 401) {
-          navigate('/login');
-        }
-      });
-  };
+  const commentHandler = useCallback(
+    (comment: string) => {
+      dispatch(createComment({ comment: comment, postId: post._id }));
+      if (fetchingStatus.status === 200) {
+        navigate(`post/${post._id}`);
+      } else {
+        navigate('/login');
+      }
+    },
+    [dispatch, fetchingStatus.status, navigate, post._id]
+  );
 
   return (
-    <Fragment>
-      <ToastContainer />
-      <Section>
-        <div className="post-header">
-          <PostHeader handleDeletedItem={handleDeletedItem} post={post} />
-        </div>
+    <Section>
+      <div className="post-header">
+        <PostHeader handleDeletedItem={handleDeletedItem} post={post} />
+      </div>
 
-        <div className="post-container" onClick={routingToComplePostHandler}>
-          <img
-            src={`${BASE_API_IMAGE_url}/${post.imageUrl}`}
-            alt={post.title}
-            className="img-post"
-          />
-        </div>
+      <div className="post-container" onClick={routingToComplePostHandler}>
+        <img
+          src={`${BASE_API_IMAGE_url}/${post.imageUrl}`}
+          alt={post.title}
+          className="img-post"
+        />
+      </div>
 
-        <div className="post-details">
-          <PostActions
-            post={post}
-            focusingOnInputHandler={() =>
-              setIsInputFocused((prevState) => !prevState)
-            }
-          />
+      <div className="post-details">
+        <PostActions
+          post={post}
+          focusingOnInputHandler={() =>
+            setIsInputFocused((prevState) => !prevState)
+          }
+        />
 
-          <div className="caption-container">
-            <span className="creator bold">{post.creator.name}</span>
-            <span className="caption-body">
-              {post.caption.length > 100 && !isShowMore
-                ? `${post.caption.slice(0, 100)}...`
-                : post.caption}
-            </span>
-            <div
-              className="more-btn"
-              onClick={() => setIsShowMore(!isShowMore)}>
-              {post.caption.length > 100 ? (isShowMore ? 'less' : 'more') : ''}
-            </div>
-          </div>
-
-          <div className="comments-container">
-            <span className="view-comments">
-              {post.comments && post.comments.length > 0
-                ? `View all ${post.comments.length} comments`
-                : 'No comment yet!'}
-            </span>
-            <PostForm
-              commentHandler={commentHandler}
-              isInputFocused={isInputFocused}
-            />
+        <div className="caption-container">
+          <span className="creator bold">{post.creator.name}</span>
+          <span className="caption-body">
+            {post.caption.length > 100 && !isShowMore
+              ? `${post.caption.slice(0, 100)}...`
+              : post.caption}
+          </span>
+          <div className="more-btn" onClick={() => setIsShowMore(!isShowMore)}>
+            {post.caption.length > 100 ? (isShowMore ? 'less' : 'more') : ''}
           </div>
         </div>
-      </Section>
-    </Fragment>
+
+        <div className="comments-container">
+          <span className="view-comments" onClick={routingToComplePostHandler}>
+            {post.comments && post.comments.length === 1
+              ? `View the first comment`
+              : post.comments && post.comments.length > 0
+              ? `View all ${post.comments.length} comments`
+              : 'No comment yet!'}
+          </span>
+          <PostForm
+            commentHandler={commentHandler}
+            isInputFocused={isInputFocused}
+          />
+        </div>
+      </div>
+    </Section>
   );
 };
 
-export default PreviewPosts;
+export default memo(PreviewPosts);
 
 const Section = styled.section`
   background: #fff;

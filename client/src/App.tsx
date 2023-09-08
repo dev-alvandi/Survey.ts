@@ -29,11 +29,11 @@ function App() {
         />
         <Route
           path="/avatar"
-          element={!isAuth ? <Avatar /> : <Navigate to="/" />} //! incorrectly protected!
+          element={!isAuth ? <Avatar /> : <Navigate to="/" />}
         />
         <Route
           path="/edit-avatar/"
-          element={isAuth ? <Avatar /> : <Navigate to="/" />} //! incorrectly protected!
+          element={isAuth ? <Avatar /> : <Navigate to="/" />}
         />
         <Route
           path="/login"

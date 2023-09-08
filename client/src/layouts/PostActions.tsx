@@ -1,15 +1,13 @@
-import { FC, Fragment, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 import { TbMessageCircle2 } from 'react-icons/tb';
-import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { BASE_API_URL } from '../utils/api';
 import { PostSchemaTypes } from '../store/postSlice';
 import { useNavigate } from 'react-router-dom';
-import toastOptions from '../utils/toastOptions';
 
 interface PropTypes {
   post: PostSchemaTypes;
@@ -49,7 +47,6 @@ const PostActions: FC<PropTypes> = ({ post, focusingOnInputHandler }) => {
         if (res.status === 201) {
           setNumberOfLikes(res.data.likes);
           setIsLiked((prevState) => !prevState);
-          toast.success(res.data.msg, toastOptions);
         }
       })
       .catch(({ response }) => {
@@ -60,32 +57,23 @@ const PostActions: FC<PropTypes> = ({ post, focusingOnInputHandler }) => {
   };
 
   return (
-    <Fragment>
-      <Container>
-        <div className="post-icons-container">
-          {!isLiked && (
-            <AiOutlineHeart className="icon" onClick={likeHandler} />
-          )}
-          {isLiked && (
-            <AiFillHeart
-              fill="#6643b5"
-              className="icon"
-              onClick={likeHandler}
-            />
-          )}
+    <Container>
+      <div className="post-icons-container">
+        {!isLiked && <AiOutlineHeart className="icon" onClick={likeHandler} />}
+        {isLiked && (
+          <AiFillHeart fill="#6643b5" className="icon" onClick={likeHandler} />
+        )}
 
-          <TbMessageCircle2
-            className="icon comment-icon"
-            onClick={focusingOnInputHandler}
-          />
-        </div>
-        <div className="likes-container">
-          <span className="likes">{numberOfLikes}</span>
-          likes
-        </div>
-      </Container>
-      <ToastContainer />
-    </Fragment>
+        <TbMessageCircle2
+          className="icon comment-icon"
+          onClick={focusingOnInputHandler}
+        />
+      </div>
+      <div className="likes-container">
+        <span className="likes">{numberOfLikes}</span>
+        likes
+      </div>
+    </Container>
   );
 };
 

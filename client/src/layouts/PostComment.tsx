@@ -228,8 +228,8 @@ const Container = styled.div`
           font-style: italic;
         }
         .post-edit-delete {
-          opacity: 0;
-          visibility: hidden;
+          cursor: pointer;
+
           padding: 0.6rem;
           position: relative;
           --dot-size: 0.2rem;
@@ -238,8 +238,6 @@ const Container = styled.div`
             height: var(--dot-size);
             background-color: var(--secondary-text-color);
             border-radius: 50%;
-            &:hover {
-            }
             &::after,
             &::before {
               content: '';
@@ -266,11 +264,5 @@ const Container = styled.div`
         cursor: pointer;
       }
     }
-  }
-
-  &:hover .comment-details .comment-details-info .post-edit-delete {
-    opacity: 1;
-    visibility: visible;
-    cursor: pointer;
   }
 `;

@@ -116,6 +116,9 @@ const Avatar = () => {
 export default Avatar;
 
 const Container = styled.div`
+  .title {
+    text-align: center;
+  }
   form {
     display: flex;
     flex-direction: column;

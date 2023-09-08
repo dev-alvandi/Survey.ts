@@ -132,8 +132,6 @@ export default function CreatePost() {
       };
     }
 
-    console.log(values);
-
     axios({
       method: fetchingconfig.method,
       url: fetchingconfig.url,
@@ -153,7 +151,6 @@ export default function CreatePost() {
         }
       })
       .catch(({ response }) => {
-        // .catch(({ response }) => {
         setIsLoading(false);
         if (response.data.data) {
           response.data.data.forEach((errMsg: string) => {
