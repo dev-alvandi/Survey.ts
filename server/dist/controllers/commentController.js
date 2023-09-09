@@ -56,7 +56,6 @@ const newComment = (req, res, next) => {
     })
         .then((newPost) => newPost.populate('creator'))
         .then((populatednewPost) => {
-        console.log(populatednewPost);
         socket_1.default.getIO().emit('comments', {
             action: 'create',
             post: populatednewPost,
@@ -104,7 +103,6 @@ const editComment = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
             .populate('creator');
     })
         .then((newPopulatedPost) => {
-        console.log(newPopulatedPost);
         socket_1.default.getIO().emit('comments', {
             action: 'edit',
             post: newPopulatedPost,
@@ -187,7 +185,6 @@ const likeComment = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
         }
         const hasAlreadyLikedIndex = loadedComment.likes.findIndex((userIdWhoLikedPost) => userIdWhoLikedPost === userId);
         if (isLiked && hasAlreadyLikedIndex === -1) {
-            // console.log('Liked');
             yield userModel_1.default.findByIdAndUpdate(userId, {
                 $push: { likedComments: commentId },
             });
@@ -201,7 +198,6 @@ const likeComment = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
         }
     }))
         .then((updatedComment) => {
-        console.log(isLiked);
         if (!updatedComment) {
             throw (0, customError_1.default)('Liking comment failed', 500);
         }

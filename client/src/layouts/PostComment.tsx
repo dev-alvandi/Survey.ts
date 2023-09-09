@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import axios from 'axios';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
-import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { UserSchemaTypes } from '../store/userSlice';
@@ -14,7 +13,7 @@ import OverlayModal from '../components/OverlayModal';
 import { isEditingHandler } from '../store/commentSlice';
 import { useAppDispatch } from '../store/store';
 import { isEdited } from '../utils/isEdited';
-import toastOptions from '../utils/toastOptions';
+import { useNavigate } from 'react-router-dom';
 
 interface PostCommentPropType {
   comment: {
@@ -30,6 +29,7 @@ interface PostCommentPropType {
 
 const PostComment: FC<PostCommentPropType> = ({ comment }) => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const [isYourComment, setIsYourComment] = useState(false);
   const [isDisplaySetting, setIsDisplayShowSetting] = useState(false);
@@ -65,15 +65,15 @@ const PostComment: FC<PostCommentPropType> = ({ comment }) => {
       )
       .then((data) => {
         if (data.status === 201) {
-          toast.success(data.data.msg, toastOptions);
           setIsLiked((prevState) => !prevState);
-          setNumberOfLikes(data.data.likes);
+          return setNumberOfLikes(data.data.likes);
         }
+        navigate('/');
       })
       .catch(({ response }) => {
+        navigate('/login');
         const errStatusArray = [401, 422, 500];
         if (errStatusArray.includes(response.status)) {
-          toast.error(response.data.msg, toastOptions);
         }
       });
   };
@@ -99,9 +99,10 @@ const PostComment: FC<PostCommentPropType> = ({ comment }) => {
       .delete(`${BASE_API_URL}/feed/delete-comment/${comment._id}`, config)
       .then((res) => {
         if (res.status === 200) {
-          console.log(res.data);
-          toast.success(res.data.msg, toastOptions);
+          // console.log(res.data);
+          return;
         }
+        navigate('/');
       })
       .catch((err) => {
         console.log(err);
@@ -170,7 +171,6 @@ const PostComment: FC<PostCommentPropType> = ({ comment }) => {
           </div>
         </div>
       </Container>
-      <ToastContainer />
     </Fragment>
   );
 };
@@ -197,7 +197,7 @@ const Container = styled.div`
     justify-content: space-between;
     align-items: center;
     .comment-text__container {
-      width: 13rem;
+      width: 100%;
       display: flex;
       flex-direction: column;
       justify-content: space-between;

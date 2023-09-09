@@ -7,11 +7,9 @@ import mongoose, { ConnectOptions } from 'mongoose';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
-import { createWriteStream, readFileSync } from 'fs';
-import { Http2ServerRequest } from 'http2';
+import { createWriteStream } from 'fs';
 
 // custom imports
-import User from './models/userModel';
 import authRoutes from './routes/authRoutes';
 import postRoutes from './routes/postRoutes';
 import commentRoutes from './routes/commentRoutes';
@@ -72,6 +70,8 @@ app.use((req, res, next) => {
     'GET, POST, PUT, PATCH, DELETE'
   );
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+
   next();
 });
 
@@ -121,9 +121,9 @@ mongoose
 
     return;
   })
-  .then(() =>
-    console.log('Dadabase connection and server are maintained successfully!')
-  )
+  .then(() => {
+    console.log('Dadabase connection and server are maintained successfully!');
+  })
   .catch((err) => {
     console.log(err.message);
   });

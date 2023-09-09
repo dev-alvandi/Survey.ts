@@ -35,7 +35,6 @@ const ShowPosts: FC<ShowPostsPropTypes> = ({ typeOfPosts }) => {
           Math.floor(scrollHeight - currentHeight) === 0 &&
           posts.length > 0
         ) {
-          console.log(page);
           setIsLoading(true);
           setPage(page + 1);
         }

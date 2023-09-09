@@ -34,7 +34,9 @@ const CompletePost = () => {
   const [isInputFocused, setIsInputFocused] = useState(false);
 
   useEffect(() => {
-    const socket = openSocket(`${BASE_BACKEND_URL}`);
+    const socket = openSocket(`${BASE_BACKEND_URL}`, {
+      transports: ['websocket'],
+    });
     socket.on('comments', (data: { action: string; post: PostSchemaTypes }) => {
       const dataActions = ['create', 'edit', 'delete', 'likedComment'];
       if (dataActions.includes(data.action)) {
@@ -101,11 +103,9 @@ const CompletePost = () => {
             </div>
             <div className="comments-container">
               {post.comments && post.comments.length > 0 ? (
-                post.comments
-                  .reverse()
-                  .map((comment: any) => (
-                    <PostComment key={comment._id} comment={comment} />
-                  ))
+                post.comments.map((comment: any) => (
+                  <PostComment key={comment._id} comment={comment} />
+                ))
               ) : (
                 <div className="no-comment">No Comments yet!</div>
               )}

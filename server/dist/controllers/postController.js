@@ -266,9 +266,10 @@ const editPost = (req, res, next) => {
     const { postId } = req.params;
     const { title, caption } = req.body;
     let imageUrl = req.body.image;
-    if (req.files) {
+    if (req.files && Object.keys(req.files).length > 0) {
         imageUrl = req.files.image[0].path;
     }
+    imageUrl;
     if (!imageUrl) {
         throw (0, customError_1.default)('No image has been picked!', 422);
     }

@@ -6,8 +6,8 @@ import {
   register,
   setAvatar,
   login,
-  forgottenPassword,
-  newPassword,
+  // forgottenPassword,
+  // newPassword,
   getUser,
 } from '../controllers/authControllers';
 import isAuth from '../middleware/isAuth';
@@ -73,10 +73,11 @@ router.post(
   ],
   login
 );
-router.post('/forgottenpassword', forgottenPassword);
-
-router.post('/new-password', newPassword);
 
 router.get('/get-user/:userId', isAuth, getUser);
+
+// router.post('/forgottenpassword', forgottenPassword);
+
+// router.post('/new-password', newPassword);
 
 export default router;

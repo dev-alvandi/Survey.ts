@@ -46,8 +46,9 @@ const PostActions: FC<PropTypes> = ({ post, focusingOnInputHandler }) => {
       .then((res) => {
         if (res.status === 201) {
           setNumberOfLikes(res.data.likes);
-          setIsLiked((prevState) => !prevState);
+          return setIsLiked((prevState) => !prevState);
         }
+        navigate('/login');
       })
       .catch(({ response }) => {
         if (response.status === 401) {

@@ -66,7 +66,7 @@ router.post('/login', [
         .withMessage('Please enter a password longer than 5 character!')
         .trim(),
 ], authControllers_1.login);
-router.post('/forgottenpassword', authControllers_1.forgottenPassword);
-router.post('/new-password', authControllers_1.newPassword);
 router.get('/get-user/:userId', isAuth_1.default, authControllers_1.getUser);
+// router.post('/forgottenpassword', forgottenPassword);
+// router.post('/new-password', newPassword);
 exports.default = router;

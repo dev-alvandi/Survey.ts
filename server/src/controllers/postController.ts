@@ -301,9 +301,11 @@ export const editPost: RequestHandler = (req: any, res, next) => {
 
   let imageUrl = req.body.image;
 
-  if (req.files) {
+  if (req.files && Object.keys(req.files).length > 0) {
     imageUrl = req.files.image[0].path;
   }
+
+  imageUrl;
 
   if (!imageUrl) {
     throw customError('No image has been picked!', 422);

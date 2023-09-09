@@ -48,7 +48,6 @@ export const newComment: RequestHandler = (req: any, res, next) => {
     })
     .then((newPost) => newPost.populate('creator'))
     .then((populatednewPost) => {
-      console.log(populatednewPost);
       Socket.getIO().emit('comments', {
         action: 'create',
         post: populatednewPost,
@@ -101,7 +100,6 @@ export const editComment: RequestHandler = async (req: any, res, next) => {
         .populate('creator');
     })
     .then((newPopulatedPost) => {
-      console.log(newPopulatedPost);
       Socket.getIO().emit('comments', {
         action: 'edit',
         post: newPopulatedPost,
@@ -197,7 +195,6 @@ export const likeComment: RequestHandler = async (req: any, res, next) => {
       );
 
       if (isLiked && hasAlreadyLikedIndex === -1) {
-        // console.log('Liked');
         await User.findByIdAndUpdate(userId, {
           $push: { likedComments: commentId },
         });
@@ -218,7 +215,6 @@ export const likeComment: RequestHandler = async (req: any, res, next) => {
       }
     })
     .then((updatedComment) => {
-      console.log(isLiked);
       if (!updatedComment) {
         throw customError('Liking comment failed', 500);
       }

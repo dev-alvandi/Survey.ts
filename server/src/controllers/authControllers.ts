@@ -10,17 +10,18 @@ import User, { UserType } from '../models/userModel';
 import emailHtmlTemplate from '../utils/resetPasswordTemplate';
 import customError from '../utils/customError';
 import { clearImage } from '../utils/clearImageHandler';
+import welcomeEmailTemplate from '../utils/welcomeEmailTemplate';
 
 require('dotenv').config({ path: `${__dirname}/../../.env` });
-const FRONTEND_URL: string = process.env.FRONTEND_URL as string;
+const SENDGRID_KEY_API: string = process.env.SENDGRID_KEY_API as string;
 const JWT_SECRET_KEY: string = process.env.JWT_SECRET_KEY as string;
 const JWT_EXPIRES_IN: string = process.env.JWT_EXPIRES_IN as string;
+const FRONTEND_URL: string = process.env.FRONTEND_URL as string;
 
 let transporter = nodemailer.createTransport(
   sendgridTransport({
     auth: {
-      api_key:
-        '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',
+      api_key: SENDGRID_KEY_API,
     },
   })
 );
@@ -80,15 +81,14 @@ export const register: RequestHandler = (req, res, next) => {
       const emailConfirmation = {
         to: email,
         from: 'm.Ghiasvand.edu@gmail.com',
-        subject: 'Confirmation of signup',
+        subject: 'Confirmation of registration',
         text: 'This is just a test to verify if this is your account!',
-        html: '<p>You have successfully signed up!</p>',
+        html: welcomeEmailTemplate(newUser.name, FRONTEND_URL),
       };
       return transporter.sendMail(emailConfirmation, (err, res) => {
         if (err) {
           console.log(err);
         }
-        console.log(res);
       });
     })
     .then(() => {
@@ -98,7 +98,12 @@ export const register: RequestHandler = (req, res, next) => {
         newUser: newUser,
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
 };
 
 export const setAvatar: RequestHandler = (req, res, next) => {
@@ -195,47 +200,42 @@ export const login: RequestHandler = (req, res, next) => {
     });
 };
 
-export const forgottenPassword: RequestHandler = (req, res, next) => {
-  const { email } = req.body;
+// export const forgottenPassword: RequestHandler = (req, res, next) => {
+//   const { email } = req.body;
 
-  // Vallidate the inputs
-  crypto.randomBytes(32, (err, buffer) => {
-    const token = buffer.toString('hex');
-    User.findOne({ email })
-      .then((user) => {
-        if (!user) {
-          return res.json({ msg: 'Account does not exist!', status: 404 });
-        }
-        user.resetToken = token;
-        user.resetTokenExpiration = new Date(Date.now() + 3600000);
-        return res.json({
-          msg: 'Email has been sent to your email address',
-          status: 200,
-          token,
-        });
-      })
-      .then((result) => {
-        const emailReset: {} = {
-          to: email,
-          from: 'm.Ghiasvand.edu@gmail.com',
-          subject: 'Reset Password',
-          //   html: `
-          //   <p>You have requested a password reset!</p>
-          //   <p>Click this <a href="${FRONTEND_URL}/new-password/${token}">link</a> to set a new password.</p>
-          // `,
-          html: emailHtmlTemplate(`${FRONTEND_URL}/new-password/${token}`),
-        };
-        return transporter.sendMail(emailReset, (err, res) => {
-          if (err) {
-            console.log(err);
-          }
-        });
-      })
-      .catch((err) => console.log(err));
-  });
-};
+//   crypto.randomBytes(32, (err, buffer) => {
+//     const token = buffer.toString('hex');
+//     User.findOne({ email })
+//       .then((user) => {
+//         if (!user) {
+//           return res.json({ msg: 'Account does not exist!', status: 404 });
+//         }
+//         user.resetToken = token;
+//         user.resetTokenExpiration = new Date(Date.now() + 3600000);
+//         return res.json({
+//           msg: 'Email has been sent to your email address',
+//           status: 200,
+//           token,
+//         });
+//       })
+//       .then((result) => {
+//         const emailReset: {} = {
+//           to: email,
+//           from: 'm.Ghiasvand.edu@gmail.com',
+//           subject: 'Reset Password',
+//           html: emailHtmlTemplate(`${FRONTEND_URL}/new-password/${token}`),
+//         };
+//         return transporter.sendMail(emailReset, (err, res) => {
+//           if (err) {
+//             console.log(err);
+//           }
+//         });
+//       })
+//       .catch((err) => console.log(err));
+//   });
+// };
 
-export const newPassword: RequestHandler = (req, res, next) => {
-  const { rePassword, confirmRePassword } = req.body;
-  console.log(rePassword);
-};
+// export const newPassword: RequestHandler = (req, res, next) => {
+//   const { rePassword, confirmRePassword } = req.body;
+//   console.log(rePassword);
+// };

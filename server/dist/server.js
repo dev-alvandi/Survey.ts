@@ -13,6 +13,7 @@ const helmet_1 = __importDefault(require("helmet"));
 const compression_1 = __importDefault(require("compression"));
 const morgan_1 = __importDefault(require("morgan"));
 const fs_1 = require("fs");
+// custom imports
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const postRoutes_1 = __importDefault(require("./routes/postRoutes"));
 const commentRoutes_1 = __importDefault(require("./routes/commentRoutes"));
@@ -53,6 +54,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
 });
 // Routes setups
@@ -90,7 +92,9 @@ mongoose_1.default
     });
     return;
 })
-    .then(() => console.log('Dadabase connection and server are maintained successfully!'))
+    .then(() => {
+    console.log('Dadabase connection and server are maintained successfully!');
+})
     .catch((err) => {
     console.log(err.message);
 });
