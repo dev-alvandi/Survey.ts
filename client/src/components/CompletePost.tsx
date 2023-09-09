@@ -80,9 +80,10 @@ const CompletePost = () => {
     }
     if (postId) {
       dispatch(createComment({ comment: comment, postId: postId }));
+      console.log(fetchingStatus);
       if (fetchingStatus.status === 200) {
       } else {
-        navigate('/login');
+        // navigate('/login');
       }
     }
   };

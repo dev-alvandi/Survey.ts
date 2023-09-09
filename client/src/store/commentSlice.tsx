@@ -32,12 +32,6 @@ const initialState: PostStateTypes = {
   fetchingStatus: { msg: '', status: null },
 };
 
-const authenticationConfig = {
-  headers: {
-    Authorization: 'Bearer ' + localStorage.getItem('token'),
-  },
-};
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface errReponse {
   data: { msg: string };
@@ -48,6 +42,11 @@ export const createComment = createAsyncThunk(
   'comment/createComment',
   async ({ comment, postId }: { comment: string; postId: string }) => {
     try {
+      const authenticationConfig = {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token'),
+        },
+      };
       const response = await axios({
         method: 'POST',
         url: `${BASE_API_URL}/feed/new-comment/${postId}`,
@@ -79,6 +78,11 @@ export const editComment = createAsyncThunk(
     oldCommentId: string;
     newComment: string;
   }) => {
+    const authenticationConfig = {
+      headers: {
+        Authorization: 'Bearer ' + localStorage.getItem('token'),
+      },
+    };
     try {
       const response = await axios({
         method: 'Put',
