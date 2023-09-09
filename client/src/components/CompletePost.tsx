@@ -83,7 +83,7 @@ const CompletePost = () => {
       console.log(fetchingStatus);
       if (fetchingStatus.status === 200) {
       } else {
-        // navigate('/login');
+        navigate('/login');
       }
     }
   };
